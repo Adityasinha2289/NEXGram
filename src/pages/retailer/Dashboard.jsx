@@ -1,93 +1,247 @@
-import { PackageOpen, Clock, Package } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { PackageOpen, MapPin, TrendingUp, HeartPulse, Sparkles, Store, Clock, ArrowRight, Truck } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { EmptyState } from '../../components/ui/EmptyState';
-import { MOCK_USER, MOCK_ORDERS } from '../../data/mockData';
+import { RETAILER_DASHBOARD_MOCK } from '../../data/retailerMock';
+import { DemandEngine } from '../../features/intelligence/services/DemandEngine';
+import { DEMAND_TEST_MOCK } from '../../data/demandTestMock';
+import { SupplyGapEngine } from '../../features/intelligence/services/SupplyGapEngine';
+import { SUPPLY_GAP_CATALOGUES_MOCK } from '../../data/supplyGapTestMock';
 
 export function RetailerDashboard() {
-  const { name, pendingOrders, recentActivity } = MOCK_USER.retailer;
-  const recentOrders = MOCK_ORDERS;
+  const navigate = useNavigate();
+  const { businessSnapshot, developerPack, recommendedProducts, reorderItems, nearbyDistributors } = RETAILER_DASHBOARD_MOCK;
+  
+  const [userData, setUserData] = useState({
+    name: RETAILER_DASHBOARD_MOCK.fallbackName,
+    location: RETAILER_DASHBOARD_MOCK.fallbackLocation,
+    businessType: ''
+  });
+
+  useEffect(() => {
+    // DEV INTEGRATION: Run Intelligence Engines purely for developer verification
+    const demandSignals = DemandEngine.analyze(DEMAND_TEST_MOCK);
+    const gapSignals = SupplyGapEngine.analyze(demandSignals, SUPPLY_GAP_CATALOGUES_MOCK);
+    
+    console.log("[DEV INTELLIGENCE] Demand Engine Output:", demandSignals);
+    console.log("[DEV INTELLIGENCE] Supply Gap Engine Output:", gapSignals);
+
+    try {
+      const saved = localStorage.getItem('nexgram_retailer_onboarding');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setUserData({
+          name: parsed.contactName || RETAILER_DASHBOARD_MOCK.fallbackName,
+          location: parsed.location?.district && parsed.location?.area 
+            ? `${parsed.location.area}, ${parsed.location.district}`
+            : RETAILER_DASHBOARD_MOCK.fallbackLocation,
+          businessType: parsed.businessType || ''
+        });
+      }
+    } catch (e) {
+      console.error("Failed to parse local storage", e);
+    }
+  }, []);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pb-6 animate-fade-in">
+      
+      {/* 1. HEADER / GREETING */}
       <header>
-        <h2 className="text-2xl font-bold">Namaste, {name}!</h2>
-        <p className="text-muted">Aaj ka business kaisa chal raha hai?</p>
+        <h2 className="text-2xl font-bold text-text-primary leading-tight">Namaste, {userData.name}</h2>
+        <p className="text-text-muted mt-1 text-sm">Aapke business ke liye aaj kya useful hai?</p>
+        <div className="flex items-center gap-1 text-sm font-medium text-primary mt-2">
+          <MapPin size={16} />
+          <span>{userData.location}</span>
+        </div>
       </header>
 
-      <div className="flex gap-4">
-        <Card className="flex-1 bg-surface border-border">
-          <CardContent className="p-4 flex flex-col items-center justify-center gap-2">
-            <PackageOpen className="text-primary" size={24} />
-            <div className="text-center">
-              <p className="text-xs text-muted">Pending Orders</p>
-              <p className="text-xl font-bold text-primary">{pendingOrders}</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="flex-1 bg-surface border-border">
-          <CardContent className="p-4 flex flex-col items-center justify-center gap-2">
-            <Clock className="text-secondary" size={24} />
-            <div className="text-center">
-              <p className="text-xs text-muted">Recent Activity</p>
-              <p className="text-sm font-bold text-secondary mt-1 line-clamp-2 leading-tight">
-                {recentActivity}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
+      {/* 2. DEVELOPER PACK — PRIMARY ACTION (Hero Card) */}
       <section>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-lg">Recent Orders</h3>
-          <Button variant="ghost" size="sm">Sab Dekho</Button>
+        <Card className="bg-primary/5 border-primary/20 overflow-hidden relative shadow-md">
+          {/* Decorative background element */}
+          <div className="absolute -right-8 -top-8 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+          
+          <CardContent className="p-5 flex flex-col gap-4 relative z-10">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-bold text-xl text-text-primary flex items-center gap-2">
+                  <Sparkles size={20} className="text-primary" />
+                  Your Developer Pack
+                </h3>
+                <p className="text-sm text-text-muted mt-1 leading-snug">Aapke business aur current requirements ke hisaab se products ka suggested pack.</p>
+              </div>
+            </div>
+
+            <div className="bg-surface border border-border/50 rounded-lg p-3">
+              <p className="font-bold text-sm text-text-primary mb-2 border-b border-border/50 pb-2">{developerPack.title}</p>
+              <ul className="flex flex-col gap-1.5 text-sm">
+                {developerPack.items.map((item, i) => (
+                  <li key={i} className="flex justify-between text-text-primary">
+                    <span>{item.name}</span>
+                    <span className="font-medium text-text-muted">{item.qty}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 pt-2 border-t border-border/50 flex justify-between items-center font-bold">
+                <span className="text-sm text-text-muted">Estimated Total:</span>
+                <span className="text-primary">{developerPack.estimatedTotal}</span>
+              </div>
+            </div>
+
+            <Button fullWidth onClick={() => navigate('/retailer/developer-pack')} className="shadow-sm">
+              Pack Dekho
+            </Button>
+            <p className="text-[10px] text-center text-text-muted mt-[-4px]">Based on your business profile & current requirements</p>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* 3. RECOMMENDED FOR YOUR AREA */}
+      <section>
+        <div className="mb-3">
+          <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
+            Recommended for {userData.businessType ? `your ${userData.businessType}` : 'Your Area'}
+          </h3>
+          <p className="text-sm text-text-muted">Nearby retailers ki demand aur local availability ke signals.</p>
         </div>
         
-        {recentOrders.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            {recentOrders.map(order => (
-              <Card key={order.id} interactive>
-                <CardContent className="p-4 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-surface-muted rounded-lg">
-                      <Package size={20} className="text-muted" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">{order.id}</p>
-                      <p className="text-xs text-muted">{order.date} • {order.items} items</p>
-                    </div>
+        <div className="flex flex-col gap-3">
+          {recommendedProducts.map(product => (
+            <Card key={product.id}>
+              <CardContent className="p-4 flex items-center justify-between gap-3">
+                <div className="flex-1">
+                  <p className="text-xs text-text-muted uppercase font-bold tracking-wider mb-0.5">{product.category}</p>
+                  <h4 className="font-bold text-md text-text-primary leading-tight">{product.name}</h4>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant={product.demandBadge} className="text-[10px]">Demand {product.demand}</Badge>
+                    <Badge variant={product.availabilityBadge} className="text-[10px]">Supply {product.availability}</Badge>
                   </div>
-                  <div className="text-right">
-                    <Badge variant={order.status === 'Delivered' ? 'success' : 'warning'}>
-                      {order.status}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <EmptyState 
-            title="Koi Order Nahi Hai" 
-            description="Aapne abhi tak koi order place nahi kiya hai." 
-            actionLabel="Order Karein"
-            onAction={() => {}}
-          />
-        )}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => navigate('/retailer/distributors')} className="flex-shrink-0">
+                  Details Dekho
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </section>
 
-      <section className="mt-4">
-        <Card className="bg-primary text-text-inverse border-none">
-          <CardContent className="p-6 flex flex-col items-center text-center gap-4">
-            <h3 className="font-bold text-lg">AI Business Copilot</h3>
-            <p className="text-sm opacity-90">Apne business ko badhane ke naye tarike seekhein.</p>
-            <Button variant="secondary" className="mt-2 w-full">Baat Karein</Button>
-          </CardContent>
-        </Card>
+      {/* 4. QUICK REORDER */}
+      <section>
+        <div className="mb-3 flex justify-between items-end">
+          <div>
+            <h3 className="font-bold text-lg text-text-primary">Quick Reorder</h3>
+            <p className="text-sm text-text-muted">Jo products aap pehle le chuke hain.</p>
+          </div>
+          <Button variant="ghost" size="sm" icon={ArrowRight} className="px-0 text-primary" onClick={() => navigate('/retailer/reorder')}>
+            Sab Dekho
+          </Button>
+        </div>
+        
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+          {reorderItems.map(item => (
+            <Card key={item.id} className="min-w-[160px] flex-shrink-0">
+              <CardContent className="p-3 flex flex-col gap-2">
+                <PackageOpen size={20} className="text-text-muted" />
+                <h4 className="font-bold text-sm text-text-primary truncate">{item.name}</h4>
+                <div className="flex items-center gap-1 text-[10px] text-text-muted">
+                  <Clock size={12} />
+                  <span>{item.lastOrdered}</span>
+                </div>
+                <Button variant="secondary" size="sm" fullWidth className="mt-1 h-8 text-xs" onClick={() => navigate('/retailer/reorder')}>
+                  Dobara Order
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </section>
+
+      {/* 5. NEARBY DISTRIBUTORS */}
+      <section>
+        <div className="mb-3">
+          <h3 className="font-bold text-lg text-text-primary">Nearby Distributors</h3>
+          <p className="text-sm text-text-muted">Aapke area mein available suppliers.</p>
+        </div>
+        
+        <div className="flex flex-col gap-3">
+          {nearbyDistributors.map(dist => (
+            <Card key={dist.id}>
+              <CardContent className="p-4 flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center flex-shrink-0">
+                    <Store size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-md text-text-primary leading-tight">{dist.name}</h4>
+                    <p className="text-xs text-text-muted mt-0.5">{dist.categories}</p>
+                    <div className="flex items-center gap-3 mt-1 text-[11px] font-medium text-text-primary">
+                      <span className="flex items-center gap-1"><MapPin size={12} className="text-text-muted" /> {dist.distance}</span>
+                      <span className="flex items-center gap-1"><Truck size={12} className="text-text-muted" /> {dist.delivery}</span>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" fullWidth onClick={() => navigate('/retailer/distributors')}>
+                  Catalogue Dekho
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* 6. BUSINESS SNAPSHOT */}
+      <section className="mt-2 border-t border-border pt-6">
+        <h3 className="font-bold text-lg text-text-primary mb-3">Business Snapshot</h3>
+        <div className="grid grid-cols-3 gap-3">
+          <Card className="bg-surface border-border">
+            <CardContent className="p-3 flex flex-col items-center text-center justify-center h-full gap-1">
+              <HeartPulse className="text-success mb-1" size={18} />
+              <p className="text-[10px] uppercase font-bold text-text-muted tracking-wider leading-tight">Health</p>
+              <p className="text-md font-bold text-text-primary leading-none mt-0.5">{businessSnapshot.health}</p>
+              <p className="text-[9px] text-text-muted leading-tight mt-1">{businessSnapshot.healthLabel}</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-surface border-border">
+            <CardContent className="p-3 flex flex-col items-center text-center justify-center h-full gap-1">
+              <TrendingUp className="text-primary mb-1" size={18} />
+              <p className="text-[10px] uppercase font-bold text-text-muted tracking-wider leading-tight">Demand</p>
+              <p className="text-md font-bold text-text-primary leading-none mt-0.5">{businessSnapshot.demand}</p>
+              <p className="text-[9px] text-text-muted leading-tight mt-1">{businessSnapshot.demandLabel}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-surface border-border">
+            <CardContent className="p-3 flex flex-col items-center text-center justify-center h-full gap-1">
+              <PackageOpen className="text-secondary mb-1" size={18} />
+              <p className="text-[10px] uppercase font-bold text-text-muted tracking-wider leading-tight">Opportunity</p>
+              <p className="text-md font-bold text-text-primary leading-none mt-0.5">{businessSnapshot.opportunity}</p>
+              <p className="text-[9px] text-text-muted leading-tight mt-1">{businessSnapshot.opportunityLabel}</p>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* 7. SIMPLE NEXT ACTIONS */}
+      <section className="mt-2 pb-6">
+        <h3 className="font-bold text-lg text-text-primary mb-3">Aaj Kya Karein?</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={() => navigate('/retailer/developer-pack')}>
+            Pack Dekho
+          </Button>
+          <Button variant="outline" size="sm" className="bg-surface" onClick={() => navigate('/retailer/distributors')}>
+            Products Dekho
+          </Button>
+          <Button variant="outline" size="sm" className="bg-surface" onClick={() => navigate('/retailer/reorder')}>
+            Dobara Order Karo
+          </Button>
+        </div>
+      </section>
+
     </div>
   );
 }
