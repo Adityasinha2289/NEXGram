@@ -31,8 +31,6 @@ export const APP_CONSTANTS = {
   DELIVERY_OPTIONS: ['1 day', '1–2 days', '2 days', '2–3 days', '3+ days'],
   SERVICE_RADIUS_OPTIONS: ['5 km', '10 km', '20 km', '50+ km'],
   STORAGE_KEYS: {
-    RETAILER_ONBOARDING: 'nexgram_retailer_onboarding',
-    DISTRIBUTOR_ONBOARDING: 'nexgram_distributor_onboarding',
     DEVELOPER_PACK: 'nexgram_retailer_developer_pack',
     RETAILER_ORDERS: 'nexgram_retailer_orders',
     DISTRIBUTOR_ORDERS: 'nexgram_distributor_orders',

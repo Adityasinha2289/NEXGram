@@ -11,11 +11,19 @@ import { SupplyGapEngine } from '../../features/intelligence/services/SupplyGapE
 import { OpportunityEngine } from '../../features/intelligence/services/OpportunityEngine';
 import { DEMAND_TEST_MOCK } from '../../data/demandTestMock';
 import { SUPPLY_GAP_CATALOGUES_MOCK } from '../../data/supplyGapTestMock';
+import { useAuth } from '../../context/AuthContext';
 
 export function DistributorDashboard() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const { businessName, location, snapshot, demandGaps, retailerDemand, orders } = DISTRIBUTOR_DASHBOARD_MOCK;
   const { summary: catalogueSummary } = useCatalogue();
+
+  // Use profile data if available
+  const displayBusinessName = profile?.profile_data?.businessName || profile?.name || businessName;
+  const displayLocation = profile?.profile_data?.location?.district && profile?.profile_data?.location?.area
+    ? `${profile.profile_data.location.area}, ${profile.profile_data.location.district}`
+    : `${location.area}, ${location.district}`;
 
   useEffect(() => {
     // DEV INTEGRATION: Log Opportunity Engine outputs
@@ -29,11 +37,11 @@ export function DistributorDashboard() {
     <div className="flex flex-col gap-6 pb-6 animate-fade-in">
       {/* 1. HEADER / GREETING */}
       <header>
-        <h2 className="text-2xl font-bold text-text-primary leading-tight">Namaste, {businessName}</h2>
+        <h2 className="text-2xl font-bold text-text-primary leading-tight">Namaste, {displayBusinessName}</h2>
         <p className="text-text-muted mt-1 text-sm">Apne area mein naye business opportunities dekhiye.</p>
         <div className="flex items-center gap-1 text-sm font-medium text-primary mt-2">
           <MapPin size={16} />
-          <span>Serving: {location.area}, {location.district}</span>
+          <span>Serving: {displayLocation}</span>
         </div>
       </header>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '../../../../context/AuthContext';
 import { DEVELOPER_PACK_MOCK } from '../../../../data/retailerMock';
 import { DemandEngine } from '../../../../features/intelligence/services/DemandEngine';
 import { SupplyGapEngine } from '../../../../features/intelligence/services/SupplyGapEngine';
@@ -7,6 +8,7 @@ import { DEMAND_TEST_MOCK } from '../../../../data/demandTestMock';
 import { SUPPLY_GAP_CATALOGUES_MOCK } from '../../../../data/supplyGapTestMock';
 
 export function useDeveloperPack() {
+  const { profile } = useAuth();
   const [packItems, setPackItems] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -15,17 +17,13 @@ export function useDeveloperPack() {
   // Expose an explicit regenerate function
   const regeneratePack = () => {
     try {
-      const savedProfile = localStorage.getItem('nexgram_retailer_onboarding');
-      let profile = {};
-      if (savedProfile) {
-        profile = JSON.parse(savedProfile);
-      }
+      const pData = profile?.profile_data || {};
 
       // Chain the deterministic intelligence pipeline
       const demandSignals = DemandEngine.analyze(DEMAND_TEST_MOCK);
       const gapSignals = SupplyGapEngine.analyze(demandSignals, SUPPLY_GAP_CATALOGUES_MOCK);
       const generatedData = DeveloperPackEngine.generate(
-        profile,
+        pData,
         demandSignals.productSignals,
         demandSignals.categorySignals,
         gapSignals.productGaps,

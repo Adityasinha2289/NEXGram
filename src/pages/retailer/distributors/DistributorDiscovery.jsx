@@ -1,19 +1,27 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Sparkles, CheckCircle2 } from 'lucide-react';
-import { DISTRIBUTORS_LIST_MOCK } from '../../../data/distributorDiscoveryMock';
 import { SUPPLY_GAP_CATALOGUES_MOCK } from '../../../data/supplyGapTestMock';
+import { DISTRIBUTORS_LIST_MOCK } from '../../../data/distributorDiscoveryMock'; // Keep for engine fallback
 import { DistributorMatchingEngine } from '../../../features/intelligence/services/DistributorMatchingEngine';
 import { PackContextCard } from './components/PackContextCard';
 import { DistributorFilters } from './components/DistributorFilters';
 import { DistributorCard } from './components/DistributorCard';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Badge } from '../../../components/ui/Badge';
+import { distributorsApi } from '../../../services/api/distributorsApi';
+import { useAuth } from '../../../context/AuthContext';
 
 export function DistributorDiscovery() {
+  const { profile } = useAuth();
   const [packItems, setPackItems] = useState([]);
   const [retailerProfile, setRetailerProfile] = useState(null);
   const [locationStr, setLocationStr] = useState('Area, District');
   
+  // API State
+  const [dbDistributors, setDbDistributors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -21,17 +29,12 @@ export function DistributorDiscovery() {
 
   useEffect(() => {
     // Load Location & Profile
-    try {
-      const savedOnboarding = localStorage.getItem('nexgram_retailer_onboarding');
-      if (savedOnboarding) {
-        const parsed = JSON.parse(savedOnboarding);
-        setRetailerProfile(parsed);
-        if (parsed.location?.area && parsed.location?.district) {
-          setLocationStr(`${parsed.location.area}, ${parsed.location.district}`);
-        }
+    if (profile?.profile_data) {
+      const parsed = profile.profile_data;
+      setRetailerProfile(parsed);
+      if (parsed.location?.area && parsed.location?.district) {
+        setLocationStr(`${parsed.location.area}, ${parsed.location.district}`);
       }
-    } catch (e) {
-      console.error('Failed to parse onboarding', e);
     }
 
     // Load Developer Pack
@@ -43,19 +46,55 @@ export function DistributorDiscovery() {
     } catch (e) {
       console.error('Failed to parse developer pack', e);
     }
-  }, []);
+  }, [profile]);
+
+  const fetchDistributors = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await distributorsApi.getDistributors({
+        search: searchQuery || undefined,
+        // The API supports location search, but UI filters locally for now to match old behavior
+        page_size: 50
+      });
+      
+      // Map DB schema to UI schema
+      const mapped = response.items.map(d => ({
+        id: d.id,
+        name: d.business_name,
+        categories: d.business_category ? [d.business_category] : ['General'], // Fallback since schema might not have array
+        distance: d.service_radius || 'Nearby',
+        deliveryTime: d.delivery_capability || 'N/A',
+        minimumOrder: d.minimum_order_value || 0,
+        hasDelivery: !!d.delivery_capability
+      }));
+      
+      setDbDistributors(mapped);
+    } catch (err) {
+      console.error("Failed to fetch distributors", err);
+      setError("Failed to load distributors.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    fetchDistributors();
+  }, [fetchDistributors]);
 
   // Run Deterministic Matching Engine
   const matchingData = useMemo(() => {
     if (packItems.length === 0) return null;
     
-    // Construct payload for the engine
     const developerPackPayload = {
       retailerId: retailerProfile?.id || 'unknown',
       retailerLocation: retailerProfile?.location || null,
       products: packItems
     };
 
+    // To prevent engine crash, we supply the original DISTRIBUTORS_LIST_MOCK to the engine 
+    // since SUPPLY_GAP_CATALOGUES_MOCK expects those specific mock IDs.
+    // This preserves intelligence determinism while we migrate the display layer.
     return DistributorMatchingEngine.match(
       developerPackPayload, 
       SUPPLY_GAP_CATALOGUES_MOCK, 
@@ -66,33 +105,34 @@ export function DistributorDiscovery() {
 
   const bestMatch = matchingData?.bestMatch || null;
 
-  // Compute distributor pack match for legacy list
+  // Compute distributor pack match for the fetched list
   const distributorsWithMatch = useMemo(() => {
-    return DISTRIBUTORS_LIST_MOCK.map(dist => {
+    return dbDistributors.map(dist => {
       let matchCount = 0;
       
       if (matchingData) {
-        // Did the matching engine evaluate this distributor?
-        if (matchingData.bestMatch?.distributorId === dist.id) {
+        // Attempt name-based or ID-based fallback since DB IDs differ from Mock IDs
+        if (matchingData.bestMatch?.distributorId === dist.id || matchingData.bestMatch?.distributorName === dist.name) {
           matchCount = matchingData.bestMatch.productsFulfilled;
         } else {
-          const alt = matchingData.alternatives.find(a => a.distributorId === dist.id);
+          const alt = matchingData.alternatives.find(a => a.distributorId === dist.id || a.distributorName === dist.name);
           if (alt) matchCount = alt.productsFulfilled;
         }
       }
       
       return { ...dist, packMatchCount: matchCount };
     });
-  }, [matchingData]);
+  }, [dbDistributors, matchingData]);
 
   // Apply Filters & Sort
   const filteredAndSorted = useMemo(() => {
     let result = distributorsWithMatch;
 
     if (selectedCategory !== 'All') {
-      result = result.filter(d => d.categories.includes(selectedCategory));
+      result = result.filter(d => d.categories.some(c => c.toLowerCase() === selectedCategory.toLowerCase()));
     }
 
+    // Search is handled by API mostly, but keeping client-side filter for robustness
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(d => 
@@ -103,8 +143,7 @@ export function DistributorDiscovery() {
 
     result.sort((a, b) => {
       if (sortBy === 'Most Pack Products') return b.packMatchCount - a.packMatchCount;
-      if (sortBy === 'Nearest') return parseInt(a.distance) - parseInt(b.distance);
-      // 'Fastest Delivery' and 'Recommended' use default mock order for now
+      if (sortBy === 'Nearest') return 0; // Distance logic parsing skipped for DB strings
       return 0; 
     });
 
@@ -168,7 +207,13 @@ export function DistributorDiscovery() {
 
       {/* 4. Distributor Grid */}
       <div className="mt-2">
-        {filteredAndSorted.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
+        ) : error ? (
+          <div className="py-10">
+            <EmptyState icon={Search} title="Error" description={error} />
+          </div>
+        ) : filteredAndSorted.length === 0 ? (
           <div className="py-10">
             <EmptyState 
               icon={Search}

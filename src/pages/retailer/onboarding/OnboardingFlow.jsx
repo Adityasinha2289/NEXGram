@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
+import { profilesApi } from '../../../services/api/profilesApi';
 import { OnboardingShell } from '../../../components/ui/OnboardingShell';
 
 import { BasicDetails } from './steps/BasicDetails';
@@ -11,53 +13,73 @@ import { Purchasing } from './steps/Purchasing';
 import { Investment } from './steps/Investment';
 import { Requirements } from './steps/Requirements';
 
-const STORAGE_KEY = 'nexgram_retailer_onboarding';
 const TOTAL_STEPS = 8;
-
-const INITIAL_STATE = {
-  name: '',
-  mobile: '',
-  location: { area: '', block: '', district: '', state: '', pin: '' },
-  businessType: '',
-  demandedCategories: [],
-  unmetNeeds: { categories: [], other: '' },
-  monthlyPurchaseRange: '',
-  purchasingFrequency: '',
-  investmentBudget: '',
-  requirements: [],
-  existingSupplierType: ''
-};
 
 export function OnboardingFlow() {
   const navigate = useNavigate();
+  const { profile, setProfile } = useAuth();
   
-  // Try to load from localStorage, otherwise use INITIAL_STATE
+  // Use profile_data from context, fallback to empty
   const [data, setData] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_STATE;
+    return profile?.profile_data || {
+      name: '',
+      mobile: '',
+      location: { area: '', block: '', district: '', state: '', pin: '' },
+      businessType: '',
+      demandedCategories: [],
+      unmetNeeds: { categories: [], other: '' },
+      monthlyPurchaseRange: '',
+      purchasingFrequency: '',
+      investmentBudget: '',
+      requirements: [],
+      existingSupplierType: ''
+    };
   });
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Save to localStorage whenever data changes
+  // Sync state if profile loads later
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data]);
+    if (profile?.profile_data) {
+      setData(prev => ({ ...prev, ...profile.profile_data }));
+    }
+  }, [profile]);
 
   const updateData = (fields) => {
     setData(prev => ({ ...prev, ...fields }));
   };
 
-  const handleNext = () => {
-    if (currentStep < TOTAL_STEPS) {
-      setCurrentStep(prev => prev + 1);
-      window.scrollTo(0, 0);
-    } else {
-      // Final submission
-      console.log('Onboarding Complete:', data);
-      // Clean up localStorage after successful completion
-      localStorage.removeItem(STORAGE_KEY);
-      navigate('/retailer/dashboard');
+  const handleNext = async () => {
+    setIsSaving(true);
+    try {
+      // Incremental patch
+      const res = await profilesApi.updateRetailerProfile({
+        name: data.name,
+        mobile: data.mobile,
+        location: data.location,
+        business_type: data.businessType,
+        demanded_categories: data.demandedCategories,
+        unmet_needs: data.unmetNeeds,
+        monthly_sales_range: data.monthlyPurchaseRange,
+        purchase_frequency: data.purchasingFrequency,
+        investment_budget: data.investmentBudget,
+        requirements: data.requirements,
+        existing_supplier_type: data.existingSupplierType
+      });
+      setProfile(res);
+      
+      if (currentStep < TOTAL_STEPS) {
+        setCurrentStep(prev => prev + 1);
+        window.scrollTo(0, 0);
+      } else {
+        // Final submission completed
+        navigate('/retailer/dashboard');
+      }
+    } catch (err) {
+      console.error('Failed to save profile state:', err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -89,7 +111,9 @@ export function OnboardingFlow() {
       onBack={currentStep > 1 ? handleBack : null}
       title="Aage Badho"
     >
-      {renderStep()}
+      <div className={isSaving ? 'opacity-50 pointer-events-none' : ''}>
+        {renderStep()}
+      </div>
     </OnboardingShell>
   );
 }

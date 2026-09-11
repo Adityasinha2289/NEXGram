@@ -4,6 +4,7 @@ import { PackageOpen, MapPin, TrendingUp, HeartPulse, Sparkles, Store, Clock, Ar
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { useAuth } from '../../context/AuthContext';
 import { RETAILER_DASHBOARD_MOCK } from '../../data/retailerMock';
 import { DemandEngine } from '../../features/intelligence/services/DemandEngine';
 import { DEMAND_TEST_MOCK } from '../../data/demandTestMock';
@@ -13,6 +14,8 @@ import { SUPPLY_GAP_CATALOGUES_MOCK } from '../../data/supplyGapTestMock';
 export function RetailerDashboard() {
   const navigate = useNavigate();
   const { businessSnapshot, developerPack, recommendedProducts, reorderItems, nearbyDistributors } = RETAILER_DASHBOARD_MOCK;
+  
+  const { profile } = useAuth();
   
   const [userData, setUserData] = useState({
     name: RETAILER_DASHBOARD_MOCK.fallbackName,
@@ -28,22 +31,17 @@ export function RetailerDashboard() {
     console.log("[DEV INTELLIGENCE] Demand Engine Output:", demandSignals);
     console.log("[DEV INTELLIGENCE] Supply Gap Engine Output:", gapSignals);
 
-    try {
-      const saved = localStorage.getItem('nexgram_retailer_onboarding');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setUserData({
-          name: parsed.contactName || RETAILER_DASHBOARD_MOCK.fallbackName,
-          location: parsed.location?.district && parsed.location?.area 
-            ? `${parsed.location.area}, ${parsed.location.district}`
-            : RETAILER_DASHBOARD_MOCK.fallbackLocation,
-          businessType: parsed.businessType || ''
-        });
-      }
-    } catch (e) {
-      console.error("Failed to parse local storage", e);
+    if (profile?.profile_data) {
+      const parsed = profile.profile_data;
+      setUserData({
+        name: profile.name || RETAILER_DASHBOARD_MOCK.fallbackName,
+        location: parsed.location?.district && parsed.location?.area 
+          ? `${parsed.location.area}, ${parsed.location.district}`
+          : RETAILER_DASHBOARD_MOCK.fallbackLocation,
+        businessType: parsed.businessType || ''
+      });
     }
-  }, []);
+  }, [profile]);
 
   return (
     <div className="flex flex-col gap-6 pb-6 animate-fade-in">

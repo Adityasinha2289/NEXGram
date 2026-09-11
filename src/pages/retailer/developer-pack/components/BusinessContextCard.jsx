@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Store, MapPin, Wallet, ListChecks } from 'lucide-react';
 import { Card, CardContent } from '../../../../components/ui/Card';
+import { useAuth } from '../../../../context/AuthContext';
 
 export function BusinessContextCard() {
+  const { profile } = useAuth();
   const [context, setContext] = useState({
     businessType: 'Kirana Store',
     location: 'Palampur Market, Kangra',
@@ -11,23 +13,20 @@ export function BusinessContextCard() {
   });
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('nexgram_retailer_onboarding');
-      if (saved) {
-        const parsed = JSON.parse(saved);
+    if (profile) {
+      const data = profile.profile_data || profile;
+      if (data) {
         setContext({
-          businessType: parsed.businessType || context.businessType,
-          location: parsed.location?.district && parsed.location?.area 
-            ? `${parsed.location.area}, ${parsed.location.district}`
-            : context.location,
-          budget: parsed.investmentBudget || context.budget,
-          requirements: parsed.requirements || context.requirements
+          businessType: data.businessType || context.businessType,
+          location: data.location?.district && data.location?.area 
+            ? `${data.location.area}, ${data.location.district}`
+            : (typeof data.location === 'string' ? data.location : context.location),
+          budget: data.investmentBudget || data.budget || context.budget,
+          requirements: data.requirements || context.requirements
         });
       }
-    } catch (e) {
-      console.error("Failed to parse onboarding local storage", e);
     }
-  }, []);
+  }, [profile, context]);
 
   return (
     <Card className="bg-surface border-border">

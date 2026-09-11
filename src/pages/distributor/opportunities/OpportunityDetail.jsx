@@ -5,17 +5,33 @@ import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
-import { OPPORTUNITIES_MOCK } from '../../../data/opportunitiesMock';
+import { fetchApi } from '../../../services/api/client';
 
 export function OpportunityDetail() {
   const { opportunityId } = useParams();
   const navigate = useNavigate();
   const [opportunity, setOpportunity] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const found = OPPORTUNITIES_MOCK.find(o => o.id === opportunityId);
-    setOpportunity(found || null);
+    const fetchOpp = async () => {
+      try {
+        setLoading(true);
+        const res = await fetchApi(`/intelligence/opportunities/${opportunityId}`);
+        setOpportunity(res);
+      } catch (err) {
+        console.error("Failed to fetch opportunity", err);
+        setOpportunity(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOpp();
   }, [opportunityId]);
+
+  if (loading) {
+    return <div className="py-12 text-center text-text-muted">Loading detail...</div>;
+  }
 
   if (!opportunity) {
     return (
@@ -30,13 +46,21 @@ export function OpportunityDetail() {
     );
   }
 
-  const getDemandColor = (level) => {
-    switch (level) {
-      case 'High': return 'text-success';
-      case 'Medium': return 'text-primary';
-      default: return 'text-warning';
-    }
+  const getDemandColor = (score) => {
+    if (score >= 5) return 'text-success';
+    if (score >= 2) return 'text-primary';
+    return 'text-warning';
   };
+
+  const getOppLevel = (score) => {
+    if (score >= 80) return "Strong";
+    if (score >= 65) return "Good";
+    if (score >= 45) return "Moderate";
+    return "Low";
+  };
+
+  const oppLevel = getOppLevel(opportunity.opportunity_score);
+  const targetName = opportunity.product_id ? opportunity.product_id.toUpperCase() : (opportunity.category_id ? opportunity.category_id.toUpperCase() : "OPPORTUNITY");
 
   return (
     <div className="flex flex-col gap-6 pb-20 animate-fade-in relative h-full">
@@ -48,8 +72,8 @@ export function OpportunityDetail() {
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h2 className="text-xl font-bold text-text-primary leading-tight">{opportunity.productName}</h2>
-          <p className="text-sm text-text-muted mt-0.5">{opportunity.category}</p>
+          <h2 className="text-xl font-bold text-text-primary leading-tight">{targetName}</h2>
+          <p className="text-sm text-text-muted mt-0.5">{opportunity.category_id || "Category"}</p>
         </div>
       </header>
 
@@ -60,8 +84,8 @@ export function OpportunityDetail() {
             <Zap size={24} fill="currentColor" />
           </div>
           <div>
-            <h3 className="font-bold text-lg text-text-primary mb-1">{opportunity.opportunityLevel} Opportunity</h3>
-            <p className="text-sm text-text-muted leading-relaxed">{opportunity.insightText}</p>
+            <h3 className="font-bold text-lg text-text-primary mb-1">{oppLevel} Opportunity</h3>
+            <p className="text-sm text-text-muted leading-relaxed">{opportunity.evidence_json?.summary || "Data-driven gap in the market."}</p>
           </div>
         </CardContent>
       </Card>
@@ -72,9 +96,9 @@ export function OpportunityDetail() {
           <CardContent className="p-4 flex flex-col gap-1">
             <div className="flex items-center gap-1.5 text-text-muted mb-1">
               <TrendingUp size={14} />
-              <span className="text-xs font-bold uppercase tracking-wider">Demand</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Demand Score</span>
             </div>
-            <span className={`text-lg font-bold ${getDemandColor(opportunity.demandLevel)}`}>{opportunity.demandLevel}</span>
+            <span className={`text-lg font-bold ${getDemandColor(opportunity.demand_score)}`}>{opportunity.demand_score}</span>
           </CardContent>
         </Card>
         
@@ -84,7 +108,7 @@ export function OpportunityDetail() {
               <Store size={14} />
               <span className="text-xs font-bold uppercase tracking-wider">Retailers</span>
             </div>
-            <span className="text-lg font-bold text-text-primary">{opportunity.retailersLooking} Looking</span>
+            <span className="text-lg font-bold text-text-primary">{opportunity.potential_retailer_count} Looking</span>
           </CardContent>
         </Card>
 
@@ -94,7 +118,7 @@ export function OpportunityDetail() {
               <Package size={14} />
               <span className="text-xs font-bold uppercase tracking-wider">Local Supply</span>
             </div>
-            <span className="text-lg font-bold text-text-primary">{opportunity.localSupply}</span>
+            <span className="text-lg font-bold text-text-primary">{opportunity.supply_score} Suppliers</span>
           </CardContent>
         </Card>
 
@@ -104,7 +128,7 @@ export function OpportunityDetail() {
               <TrendingUp size={14} className="rotate-180" />
               <span className="text-xs font-bold uppercase tracking-wider">Competition</span>
             </div>
-            <span className="text-lg font-bold text-text-primary">{opportunity.competition}</span>
+            <span className="text-lg font-bold text-text-primary">{opportunity.evidence_json?.competition || "Unknown"}</span>
           </CardContent>
         </Card>
       </div>
@@ -112,7 +136,7 @@ export function OpportunityDetail() {
       {/* Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface border-t border-border flex gap-3 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <Button variant="primary" fullWidth onClick={() => navigate('/distributor/catalogue')} icon={Package}>
-          {opportunity.recommendedAction}
+          Add to Catalogue ({opportunity.recommended_initial_stock} units suggested)
         </Button>
       </div>
     </div>

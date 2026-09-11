@@ -18,6 +18,8 @@ export function Catalogue() {
     setSelectedCategory,
     categories,
     summary,
+    isLoading,
+    error,
     addProduct,
     updateProduct,
     removeProduct
@@ -56,6 +58,14 @@ export function Catalogue() {
       removeProduct(id);
     }
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-full p-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+  }
+
+  if (error) {
+    return <div className="p-12"><EmptyState title="Error Loading Catalogue" description={error} /></div>;
+  }
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in pb-24 h-full relative">

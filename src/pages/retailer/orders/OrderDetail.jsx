@@ -1,34 +1,48 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Clock, PackageOpen } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/Card';
-import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
-import { storage } from '../../../utils/storage';
-import { APP_CONSTANTS } from '../../../constants/appConstants';
-import { INITIAL_ORDERS_MOCK } from '../../../data/ordersMock';
+import { ordersApi } from '../../../services/api/ordersApi';
 
 const TIMELINE_STEPS = [
-  APP_CONSTANTS.ORDER_STATUSES.PENDING,
-  APP_CONSTANTS.ORDER_STATUSES.CONFIRMED,
-  APP_CONSTANTS.ORDER_STATUSES.PREPARING,
-  APP_CONSTANTS.ORDER_STATUSES.READY,
-  APP_CONSTANTS.ORDER_STATUSES.COMPLETED
+  'requested',
+  'accepted',
+  'preparing',
+  'ready',
+  'completed'
 ];
 
 export function OrderDetail() {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  
   const [order, setOrder] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const storedOrders = storage.get(APP_CONSTANTS.STORAGE_KEYS.RETAILER_ORDERS, []);
-    const combined = [...INITIAL_ORDERS_MOCK, ...storedOrders];
-    const found = combined.find(o => o.id === orderId);
-    setOrder(found || null);
+  const fetchOrder = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const res = await ordersApi.getOrderDetail(orderId);
+      setOrder(res);
+    } catch (err) {
+      console.error("Failed to fetch order detail:", err);
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [orderId]);
 
-  if (!order) {
+  useEffect(() => {
+    fetchOrder();
+  }, [fetchOrder]);
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+  }
+
+  if (error || !order) {
     return (
       <div className="py-12">
         <EmptyState 
@@ -42,20 +56,21 @@ export function OrderDetail() {
   }
 
   const currentStepIndex = TIMELINE_STEPS.indexOf(order.status);
-  const isCancelled = order.status === APP_CONSTANTS.ORDER_STATUSES.CANCELLED;
+  const isCancelled = order.status === 'cancelled';
+  const isRejected = order.status === 'rejected';
 
   return (
-    <div className="flex flex-col gap-6 pb-6 animate-fade-in">
+    <div className="flex flex-col gap-6 pb-6 animate-fade-in relative">
       <header className="flex items-center gap-3">
         <button 
           onClick={() => navigate(-1)}
-          className="p-2 -ml-2 rounded-full hover:bg-surface-muted text-text-muted transition-colors"
+          className="p-2 -ml-2 rounded-full hover:bg-surface-hover text-text-secondary transition-colors"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={24} />
         </button>
         <div>
-          <h2 className="text-xl font-bold text-text-primary leading-tight">{order.id}</h2>
-          <p className="text-sm text-text-muted mt-0.5">{order.distributorName}</p>
+          <h2 className="text-xl font-bold text-text-primary leading-tight">{order.order_number}</h2>
+          <p className="text-sm text-text-muted mt-0.5">{order.distributor_name}</p>
         </div>
       </header>
 
@@ -64,10 +79,10 @@ export function OrderDetail() {
         <CardContent className="p-5">
           <h3 className="font-bold text-md text-text-primary mb-4">Order Status</h3>
           
-          {isCancelled ? (
+          {(isCancelled || isRejected) ? (
             <div className="flex items-center gap-2 text-danger">
-              <CheckCircle2 size={20} />
-              <span className="font-bold">Order Cancelled</span>
+              <XCircle size={20} />
+              <span className="font-bold capitalize">Order {order.status}</span>
             </div>
           ) : (
             <div className="flex flex-col gap-4 relative">
@@ -88,7 +103,7 @@ export function OrderDetail() {
                       {isCompleted && !isCurrent ? <CheckCircle2 size={12} /> : <div className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-primary' : 'bg-transparent'}`} />}
                     </div>
                     <div>
-                      <p className={`text-sm ${isCurrent ? 'font-bold text-text-primary' : isCompleted ? 'font-medium text-text-primary' : 'text-text-muted'}`}>
+                      <p className={`text-sm capitalize ${isCurrent ? 'font-bold text-text-primary' : isCompleted ? 'font-medium text-text-primary' : 'text-text-muted'}`}>
                         {step}
                       </p>
                     </div>
@@ -103,23 +118,41 @@ export function OrderDetail() {
       {/* Order Summary */}
       <Card className="border-border">
         <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3">Order Summary</h3>
+          <h3 className="font-bold text-md text-text-primary mb-3">Order Items</h3>
           <ul className="flex flex-col gap-3">
             {order.items.map((item, i) => (
-              <li key={i} className="flex justify-between items-start text-sm border-b border-border/50 pb-2 last:border-0 last:pb-0">
+              <li key={item.id} className="flex justify-between items-start text-sm border-b border-border/50 pb-2 last:border-0 last:pb-0">
                 <div>
-                  <span className="font-medium text-text-primary block">{item.name}</span>
-                  <span className="text-xs text-text-muted">{item.quantity} {item.unit}</span>
+                  <span className="font-medium text-text-primary block">{item.product_name} ({item.variant_name})</span>
+                  <span className="text-xs text-text-muted">{item.quantity} units @ ₹{item.unit_price}</span>
                 </div>
-                <span className="font-medium text-text-primary">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                <span className="font-medium text-text-primary">₹{item.line_total.toLocaleString('en-IN')}</span>
               </li>
             ))}
           </ul>
           
           <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
-            <span className="font-bold text-text-muted text-sm">Estimated Total</span>
-            <span className="font-bold text-lg text-primary">₹{order.estimatedTotal.toLocaleString('en-IN')}</span>
+            <span className="font-bold text-text-muted text-sm">Total Amount</span>
+            <span className="font-bold text-lg text-primary">₹{order.total.toLocaleString('en-IN')}</span>
           </div>
+        </CardContent>
+      </Card>
+      
+      {/* History Log */}
+      <Card className="border-border">
+        <CardContent className="p-4">
+          <h3 className="font-bold text-md text-text-primary mb-3">Timeline</h3>
+          <ul className="flex flex-col gap-2">
+            {order.history.map((h, i) => (
+              <li key={h.id} className="text-xs flex gap-2 text-text-muted">
+                <Clock size={14} className="mt-0.5 shrink-0" />
+                <span>
+                  Changed to <strong className="capitalize">{h.new_status}</strong> on {new Date(h.created_at).toLocaleString('en-IN')}
+                  {h.reason && ` - ${h.reason}`}
+                </span>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
 

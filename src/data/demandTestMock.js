@@ -1,4 +1,4 @@
-import { Models } from './models';
+import { Models } from './models.js';
 
 // Generate 20 deterministic mock profiles across 3 locations with intentional demand patterns
 

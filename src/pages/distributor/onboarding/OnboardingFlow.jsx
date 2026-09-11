@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
+import { profilesApi } from '../../../services/api/profilesApi';
 import { OnboardingShell } from '../../../components/ui/OnboardingShell';
 
 import { BasicDetails } from './steps/BasicDetails';
@@ -12,51 +14,73 @@ import { MinimumOrder } from './steps/MinimumOrder';
 import { StockCapacity } from './steps/StockCapacity';
 import { RetailerCoverage } from './steps/RetailerCoverage';
 
-const STORAGE_KEY = 'nexgram_distributor_onboarding';
 const TOTAL_STEPS = 9;
-
-const INITIAL_STATE = {
-  contactName: '',
-  businessName: '',
-  mobile: '',
-  businessCategory: '',
-  location: { area: '', block: '', district: '', state: '', pin: '' },
-  serviceRadius: '',
-  customRadius: '',
-  productCategories: [],
-  deliveryCapabilities: [],
-  minimumOrderRange: '',
-  customMinOrder: '',
-  stockCapacity: { level: '', customDescription: '' },
-  retailerCoverage: ''
-};
 
 export function OnboardingFlow() {
   const navigate = useNavigate();
+  const { profile, setProfile } = useAuth();
   
   const [data, setData] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_STATE;
+    return profile?.profile_data || {
+      contactName: '',
+      businessName: '',
+      mobile: '',
+      businessCategory: '',
+      location: { area: '', block: '', district: '', state: '', pin: '' },
+      serviceRadius: '',
+      customRadius: '',
+      productCategories: [],
+      deliveryCapabilities: [],
+      minimumOrderRange: '',
+      customMinOrder: '',
+      stockCapacity: { level: '', customDescription: '' },
+      retailerCoverage: ''
+    };
   });
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data]);
+    if (profile?.profile_data) {
+      setData(prev => ({ ...prev, ...profile.profile_data }));
+    }
+  }, [profile]);
 
   const updateData = (fields) => {
     setData(prev => ({ ...prev, ...fields }));
   };
 
-  const handleNext = () => {
-    if (currentStep < TOTAL_STEPS) {
-      setCurrentStep(prev => prev + 1);
-      window.scrollTo(0, 0);
-    } else {
-      console.log('Distributor Onboarding Complete:', data);
-      localStorage.removeItem(STORAGE_KEY);
-      navigate('/distributor/dashboard');
+  const handleNext = async () => {
+    setIsSaving(true);
+    try {
+      const res = await profilesApi.updateDistributorProfile({
+        contact_name: data.contactName,
+        mobile: data.mobile,
+        business_name: data.businessName,
+        business_category: data.businessCategory,
+        location: data.location,
+        service_radius: data.serviceRadius,
+        custom_radius: data.customRadius,
+        product_categories: data.productCategories,
+        delivery_capabilities: data.deliveryCapabilities,
+        minimum_order_range: data.minimumOrderRange,
+        custom_min_order: data.customMinOrder,
+        stock_capacity: data.stockCapacity,
+        retailer_coverage: data.retailerCoverage
+      });
+      setProfile(res);
+      
+      if (currentStep < TOTAL_STEPS) {
+        setCurrentStep(prev => prev + 1);
+        window.scrollTo(0, 0);
+      } else {
+        navigate('/distributor/dashboard');
+      }
+    } catch (err) {
+      console.error('Failed to save profile state:', err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -89,7 +113,9 @@ export function OnboardingFlow() {
       onBack={currentStep > 1 ? handleBack : null}
       title="Aage Badho"
     >
-      {renderStep()}
+      <div className={isSaving ? 'opacity-50 pointer-events-none' : ''}>
+        {renderStep()}
+      </div>
     </OnboardingShell>
   );
 }
