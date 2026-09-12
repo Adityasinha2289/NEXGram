@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronDown, MapPin, Search, Store, TrendingUp, Truck } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
+import { FilterChips } from '../../../components/ui/FilterChips';
 import { ErrorState } from '../../../components/ui/ErrorState';
 import { Input } from '../../../components/ui/Input';
 import { PageHeader } from '../../../components/ui/PageHeader';
@@ -33,7 +34,25 @@ export function MarketSearch() {
     [debouncedQuery],
   );
   const { data, isLoading, error, reload } = useApiResource(fetcher, { initialData: [] });
-  const results = useMemo(() => data || [], [data]);
+  const all = useMemo(() => data || [], [data]);
+
+  const [category, setCategory] = useState('All');
+
+  // Counted from the results rather than from a fixed list, so a chip can never
+  // offer a category the district does not actually stock.
+  const categories = useMemo(() => {
+    const counts = new Map();
+    all.forEach((item) => counts.set(item.category, (counts.get(item.category) || 0) + 1));
+    return [
+      { value: 'All', label: 'Sab', count: all.length },
+      ...[...counts.entries()].sort().map(([value, count]) => ({ value, label: value, count })),
+    ];
+  }, [all]);
+
+  const results = useMemo(
+    () => (category === 'All' ? all : all.filter((item) => item.category === category)),
+    [all, category],
+  );
 
   return (
     <div className="flex animate-fade-in flex-col gap-5">
@@ -52,6 +71,16 @@ export function MarketSearch() {
         aria-label="Product dhoondhein"
       />
 
+      {categories.length > 2 && (
+        <FilterChips
+          name="market-category"
+          label="Category se filter karein"
+          options={categories}
+          value={category}
+          onChange={setCategory}
+        />
+      )}
+
       {error ? (
         <ErrorState description={error} onRetry={reload} />
       ) : isLoading ? (
@@ -63,7 +92,9 @@ export function MarketSearch() {
           description={
             query
               ? `"${query}" abhi koi local distributor stock nahi karta. Aap ise "Kya nahi mila?" mein report kar sakte hain.`
-              : 'Aapke district mein abhi koi stock listed nahi hai.'
+              : category !== 'All'
+                ? `${category} mein abhi koi stock listed nahi hai.`
+                : 'Aapke district mein abhi koi stock listed nahi hai.'
           }
           actionLabel="Demand report karein"
           onAction={() => navigate('/retailer/report-demand')}
@@ -104,6 +135,11 @@ export function MarketSearch() {
                       </p>
                     )}
                   </div>
+
+                  <span className="hidden min-w-0 flex-1 items-center gap-1.5 text-sm text-text-muted lg:flex">
+                    <Store size={13} className="flex-shrink-0" />
+                    <span className="truncate">{item.offers[0]?.distributorName}</span>
+                  </span>
 
                   <div className="flex flex-shrink-0 items-center gap-2">
                     <span className="text-right">

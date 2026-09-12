@@ -108,8 +108,11 @@ export function Schemes() {
                   </div>
                 </button>
 
+                {/* Two columns from 1024px: criteria is a list to read down,
+                    the paperwork and the link are a block to act on. Stacked,
+                    the button ran a full 880px wide. */}
                 {isOpen && (
-                  <div className="flex flex-col gap-5 border-t border-border bg-surface-muted px-4 py-4">
+                  <div className="flex flex-col gap-5 border-t border-border bg-surface-muted px-4 py-4 lg:grid lg:grid-cols-2 lg:gap-8">
                     <div className="flex flex-col gap-2.5">
                       <h4 className="eyebrow">Criteria</h4>
                       {scheme.checks.map((check) => {
@@ -136,7 +139,8 @@ export function Schemes() {
                       })}
                     </div>
 
-                    <div>
+                    <div className="flex flex-col gap-4">
+                      <div>
                       <h4 className="eyebrow mb-2">Documents chahiye</h4>
                       <ul className="flex flex-wrap gap-1.5">
                         {scheme.documents.map((doc) => (
@@ -148,18 +152,19 @@ export function Schemes() {
                           </li>
                         ))}
                       </ul>
+                      </div>
+
+                      <p className="text-2xs leading-snug text-text-muted">{scheme.disclaimer}</p>
+
+                      <a
+                        href={scheme.applyAt}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-text-inverse transition-colors hover:bg-primary-hover sm:self-start"
+                      >
+                        Official portal par jayein <ExternalLink size={15} strokeWidth={2} />
+                      </a>
                     </div>
-
-                    <p className="text-2xs leading-snug text-text-muted">{scheme.disclaimer}</p>
-
-                    <a
-                      href={scheme.applyAt}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex h-11 items-center justify-center gap-2 rounded-md bg-primary text-sm font-semibold text-text-inverse transition-colors hover:bg-primary-hover"
-                    >
-                      Official portal par jayein <ExternalLink size={15} strokeWidth={2} />
-                    </a>
                   </div>
                 )}
               </li>
