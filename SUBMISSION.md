@@ -126,6 +126,13 @@ The intelligence pipeline has end-to-end tests that run the whole chain against
 a database. That coverage was added after the engine was found to have shipped
 reading a column that does not exist — nothing had ever executed it.
 
+**One interface, two shapes.** The same components lay out as a thumb-reachable
+phone app and as a desktop product with a sidebar, a page column that the
+header and content agree on, and record lists that become real columns where
+there is width for them. Both breakpoints are checked by rendering every screen
+at 412px and 1440px and failing on horizontal overflow, clipped text, tap
+targets under 30px and console errors.
+
 ---
 
 ## Honest limitations
