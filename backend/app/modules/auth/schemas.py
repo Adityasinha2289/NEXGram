@@ -35,3 +35,18 @@ class MeResponse(BaseModel):
     role: str
     profile_id: Optional[str] = None
     profile_complete: bool = False
+
+
+class PasswordResetRequest(BaseModel):
+    mobile: str
+
+
+class PasswordResetConfirm(BaseModel):
+    mobile: str
+    code: str
+    new_password: str
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str

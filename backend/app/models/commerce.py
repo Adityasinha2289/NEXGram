@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Float, ForeignKey, DateTime, func, CheckConstraint
+from sqlalchemy import Column, String, Integer, Float, ForeignKey, DateTime, Index, func, CheckConstraint
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 import uuid
@@ -46,6 +46,10 @@ class Order(Base):
     
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
     history = relationship("OrderStatusHistory", back_populates="order", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_orders_retailer_status", "retailer_id", "status"),
+    )
 
 class OrderItem(Base):
     __tablename__ = "order_items"

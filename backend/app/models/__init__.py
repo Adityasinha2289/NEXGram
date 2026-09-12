@@ -1,3 +1,4 @@
+from .auth_tokens import PasswordResetToken
 from .users import User
 from .profiles import RetailerProfile, DistributorProfile, Location
 from .catalogue import Category, Product, ProductVariant, DistributorCatalogueItem

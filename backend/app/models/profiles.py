@@ -8,7 +8,7 @@ class Location(Base):
     
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     state = Column(String, nullable=True)
-    district = Column(String, nullable=True)
+    district = Column(String, index=True, nullable=True)
     block = Column(String, nullable=True)
     area = Column(String, nullable=True)
     village_town_city = Column(String, nullable=True)
