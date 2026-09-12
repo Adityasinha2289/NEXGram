@@ -27,15 +27,16 @@ export function ProcurementReview() {
     setIsPlacing(true);
     setError(null);
     const placed = [];
+    const failed = [];
     
-    try {
-      // Place order for each distributor group
-      for (const distId of distributorIds) {
-        const distData = basket[distId];
-        const lines = Object.values(distData.items);
-        
-        if (lines.length === 0) continue;
+    // Place order for each distributor group
+    for (const distId of distributorIds) {
+      const distData = basket[distId];
+      const lines = Object.values(distData.items);
+      
+      if (lines.length === 0) continue;
 
+      try {
         const order = await ordersApi.createOrder({
           distributor_id: distId,
           items: lines.map((line) => ({
@@ -48,17 +49,23 @@ export function ProcurementReview() {
         placed.push(order);
         // Clear this distributor's basket immediately upon success
         clearBasket(distId);
+      } catch (err) {
+        failed.push({ distName: distData.distributorName, error: err.message });
       }
-      
+    }
+    
+    setIsPlacing(false);
+    
+    if (placed.length > 0) {
       setSuccessOrders(placed);
-    } catch (err) {
-      setError(err.message || 'Kuch orders nahi ja paaye. Kripya basket verify karein.');
-    } finally {
-      setIsPlacing(false);
+    }
+    
+    if (failed.length > 0) {
+      setError(`${placed.length} order(s) successful. ${failed.length} order(s) need attention. Kripya basket verify karein.`);
     }
   };
 
-  if (successOrders.length > 0 && Object.keys(basket).length === 0) {
+  if (successOrders.length > 0 && Object.keys(basket).length === 0 && !error) {
     return (
       <div className="flex animate-fade-in flex-col gap-5 pt-8">
         <EmptyState

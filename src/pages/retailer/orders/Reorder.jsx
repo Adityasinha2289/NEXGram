@@ -59,7 +59,7 @@ export function Reorder() {
 
           <List>
             {items.map((item, index) => {
-              const basketQty = getQuantity(item.distributorId, item.catalogueItemId);
+              const basketQty = getQuantity(item.distributorId, item.id);
               
               return (
                 <div key={`${item.id}-${index}`} className="flex items-center gap-4 px-4 py-3 border-b border-border hover:bg-surface-muted transition-colors">
@@ -94,7 +94,7 @@ export function Reorder() {
                       disabled={item.availableStock < item.minimumOrderQuantity}
                       onClick={() => {
                         const productForBasket = {
-                          id: item.catalogueItemId,
+                          id: item.id,
                           name: item.name,
                           variant: item.variant || item.unit,
                           category: 'Uncategorised',
