@@ -1,5 +1,4 @@
-import { Store, MapPin, Wallet, ListChecks } from 'lucide-react';
-import { Card, CardContent } from '../../../../components/ui/Card';
+import { ListChecks, MapPin, Store, Wallet } from 'lucide-react';
 import { useAuth } from '../../../../context/AuthContext';
 
 /** "10000-25000" -> "₹10,000 – ₹25,000" */
@@ -13,6 +12,12 @@ function formatBudget(raw) {
   return `${rupees(numbers[0])} – ${rupees(numbers[1])}`;
 }
 
+/**
+ * The inputs the plan was computed from.
+ *
+ * Kept flat and compact: this is the footnote that makes the plan above it
+ * credible, not a section competing with it for attention.
+ */
 export function BusinessContextCard() {
   const { profile } = useAuth();
   const data = profile?.profile_data || {};
@@ -39,21 +44,16 @@ export function BusinessContextCard() {
   ];
 
   return (
-    <Card className="bg-surface border-border">
-      <CardContent className="p-4">
-        <h3 className="font-bold text-base text-text-primary mb-3">Aapka Business</h3>
-        <dl className="flex flex-col gap-3">
-          {rows.map(({ icon: Icon, label, value }) => (
-            <div key={label} className="flex items-start gap-3">
-              <Icon size={16} className="text-text-muted flex-shrink-0 mt-0.5" />
-              <div className="min-w-0">
-                <dt className="text-xs text-text-muted">{label}</dt>
-                <dd className="font-semibold text-text-primary text-sm">{value}</dd>
-              </div>
-            </div>
-          ))}
-        </dl>
-      </CardContent>
-    </Card>
+    <dl className="panel grid gap-px overflow-hidden bg-border sm:grid-cols-2">
+      {rows.map(({ icon: Icon, label, value }) => (
+        <div key={label} className="flex items-start gap-2.5 bg-surface px-4 py-3">
+          <Icon size={15} className="mt-0.5 flex-shrink-0 text-text-muted" strokeWidth={2} />
+          <div className="min-w-0">
+            <dt className="eyebrow">{label}</dt>
+            <dd className="mt-0.5 text-sm font-medium leading-snug text-text-primary">{value}</dd>
+          </div>
+        </div>
+      ))}
+    </dl>
   );
 }

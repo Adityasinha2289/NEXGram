@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Store } from 'lucide-react';
+import { AlertCircle, ShoppingCart, Store } from 'lucide-react';
 import { Button } from '../../../../components/ui/Button';
-import { Card, CardContent } from '../../../../components/ui/Card';
+import { Card } from '../../../../components/ui/Card';
 import { ordersApi } from '../../../../services/api/ordersApi';
 
 const formatRupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
@@ -68,49 +68,49 @@ export function PackOrderAction({ packItems, onOrdered }) {
   if (groups.length === 0) return null;
 
   return (
-    <Card className="border-primary/20 bg-primary/5">
-      <CardContent className="p-4 flex flex-col gap-3">
-        <h3 className="font-bold text-base text-text-primary">Order Bhejein</h3>
-        <p className="text-sm text-text-muted leading-snug">
+    <Card elevated clip>
+      <div className="border-b border-border bg-primary-subtle px-4 py-3">
+        <h3 className="text-sm font-semibold text-text-primary">Order bhejein</h3>
+        <p className="mt-0.5 text-2xs leading-snug text-text-muted">
           {groups.length === 1
-            ? 'Yeh pack ek supplier se aa raha hai.'
+            ? 'Yeh pack ek hi supplier se aa raha hai.'
             : `Yeh pack ${groups.length} suppliers se aa raha hai, isliye ${groups.length} alag orders banenge.`}
         </p>
+      </div>
 
-        <ul className="flex flex-col gap-2">
-          {groups.map((group) => (
-            <li
-              key={group.distributorId}
-              className="flex items-center justify-between gap-2 bg-surface rounded-lg p-3 border border-border"
-            >
-              <span className="flex items-center gap-2 min-w-0">
-                <Store size={15} className="text-text-muted flex-shrink-0" />
-                <span className="min-w-0">
-                  <span className="block font-semibold text-sm text-text-primary truncate">
-                    {group.distributorName}
-                  </span>
-                  <span className="block text-xs text-text-muted">
-                    {group.items.length} product{group.items.length === 1 ? '' : 's'}
-                  </span>
-                </span>
+      <ul className="divide-y divide-border">
+        {groups.map((group) => (
+          <li key={group.distributorId} className="flex items-center gap-3 px-4 py-2.5">
+            <Store size={14} className="flex-shrink-0 text-text-muted" strokeWidth={2} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium text-text-primary">
+                {group.distributorName}
               </span>
-              <span className="font-bold text-primary text-sm whitespace-nowrap">
-                {formatRupees(group.total)}
+              <span className="num block text-2xs text-text-muted">
+                {group.items.length} product{group.items.length === 1 ? '' : 's'}
               </span>
-            </li>
-          ))}
-        </ul>
+            </span>
+            <span className="num flex-shrink-0 text-sm font-semibold text-text-primary">
+              {formatRupees(group.total)}
+            </span>
+          </li>
+        ))}
+      </ul>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
-
-        <Button fullWidth icon={ShoppingCart} onClick={placeOrders} disabled={isPlacing}>
-          {isPlacing
-            ? 'Order bheja ja raha hai...'
-            : groups.length === 1
-              ? 'Order Bhejein'
-              : `${groups.length} Orders Bhejein`}
+      <div className="flex flex-col gap-2 border-t border-border p-3">
+        {error && (
+          <p
+            role="alert"
+            className="flex items-start gap-2 rounded-lg bg-danger-bg px-3 py-2 text-2xs leading-snug text-danger"
+          >
+            <AlertCircle size={13} className="mt-px flex-shrink-0" strokeWidth={2.25} />
+            {error}
+          </p>
+        )}
+        <Button fullWidth icon={ShoppingCart} isLoading={isPlacing} onClick={placeOrders}>
+          {groups.length === 1 ? 'Order bhejein' : `${groups.length} orders bhejein`}
         </Button>
-      </CardContent>
+      </div>
     </Card>
   );
 }

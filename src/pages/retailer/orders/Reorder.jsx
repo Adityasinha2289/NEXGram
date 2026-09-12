@@ -1,102 +1,93 @@
-import { useState, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Plus, Check, Clock } from 'lucide-react';
-import { Card, CardContent } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
+import { Clock, Package } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { ErrorState } from '../../../components/ui/ErrorState';
-import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
+import { List, ListRow, RowChevron } from '../../../components/ui/List';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { SkeletonList } from '../../../components/ui/Skeleton';
 import { intelligenceApi } from '../../../services/api/intelligenceApi';
+import { useApiResource } from '../../../hooks/useApiResource';
+
+const rupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
 export function Reorder() {
   const navigate = useNavigate();
-  const [reorderItems, setReorderItems] = useState([]);
-  const [addedIds, setAddedIds] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Reorder candidates come from this shop's real order history, with the
   // cadence measured from the gaps between their own past purchases.
-  const load = () => {
-    setIsLoading(true);
-    setError(null);
-    intelligenceApi.getReorderSuggestions()
-      .then(setReorderItems)
-      .catch(err => setError(err.message || 'Reorder list load nahi hui'))
-      .finally(() => setIsLoading(false));
-  };
+  const fetcher = useCallback(() => intelligenceApi.getReorderSuggestions(), []);
+  const { data, isLoading, error, reload } = useApiResource(fetcher, { initialData: [] });
+  const items = data || [];
 
-  useEffect(load, []);
-
-  const handleAddToPack = (item) => {
-    if (addedIds.includes(item.id)) return;
-    setAddedIds(prev => [...prev, item.id]);
-    navigate(`/retailer/distributors/${item.distributorId}`);
-  };
-
-  if (isLoading) return <LoadingSpinner />;
-  if (error) return <ErrorState description={error} onRetry={load} />;
+  // Anything the cadence says is due goes first: that is the reason to open
+  // this screen at all.
+  const dueCount = items.filter((item) => item.dueNow).length;
 
   return (
-    <div className="flex flex-col gap-5 pb-6 animate-fade-in">
-      <header>
-        <h2 className="text-2xl font-bold text-text-primary leading-tight">Quick Reorder</h2>
-        <p className="text-sm text-text-muted mt-1">Aapke pehle mangwaye gaye products wapas pack mein add karein.</p>
-      </header>
+    <div className="flex animate-fade-in flex-col gap-5">
+      <PageHeader
+        eyebrow="Reorder"
+        title="Dobara order karein"
+        description="Jo aap pehle mangwa chuke hain, apne hi order history ke cadence ke saath."
+      />
 
-      {reorderItems.length === 0 ? (
-        <EmptyState 
+      {error ? (
+        <ErrorState description={error} onRetry={reload} />
+      ) : isLoading ? (
+        <SkeletonList rows={4} />
+      ) : items.length === 0 ? (
+        <EmptyState
           icon={Package}
-          title="Koi past order nahi" 
-          description="Aapne abhi tak koi order complete nahi kiya hai." 
-          actionLabel="Products Dekho"
+          title="Abhi koi past order nahi"
+          description="Pehla order poora hone ke baad yahaan cadence ke hisaab se suggestions aayenge."
+          actionLabel="Products dekho"
           onAction={() => navigate('/retailer/distributors')}
         />
       ) : (
-        <div className="flex flex-col gap-3">
-          {reorderItems.map((item, index) => {
-            const inPack = addedIds.includes(item.id);
-            return (
-              <Card key={`${item.id}-${index}`} className={`border-border ${inPack ? 'bg-primary/5 border-primary/20' : ''}`}>
-                <CardContent className="p-4 flex flex-col gap-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-bold text-base text-text-primary">
-                        {item.name} <span className="text-text-muted font-medium text-sm">{item.variant}</span>
-                      </h4>
-                      <p className="text-xs text-text-muted mt-0.5">Supplier: {item.distributorName}</p>
-                      {item.dueNow && <Badge variant="warning" className="mt-1.5 text-2xs">Due now</Badge>}
-                    </div>
-                    <div className="text-right">
-                      <span className="font-bold text-primary block">₹{item.price}</span>
-                      <span className="text-2xs text-text-muted">/ {item.unit}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between mt-1 pt-3 border-t border-border">
-                    <span className="text-xs text-text-muted flex items-center gap-1">
-                      <Clock size={12} /> {item.suggestion}
-                    </span>
-                    
-                    <Button 
-                      variant={inPack ? "ghost" : "outline"} 
-                      size="sm" 
-                      icon={inPack ? Check : Plus}
-                      onClick={() => handleAddToPack(item)}
-                      disabled={inPack}
-                      className={inPack ? "text-success border-success/20 bg-success/5" : ""}
-                    >
-                      {inPack ? "Khula" : "Order Karo"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+        <>
+          {dueCount > 0 && (
+            <p className="num rounded-lg bg-warning-bg px-3 py-2.5 text-sm leading-snug text-text-secondary">
+              {dueCount} item{dueCount === 1 ? '' : 's'} aapke pichhle pattern ke hisaab se abhi
+              due hain.
+            </p>
+          )}
 
+          <List>
+            {items.map((item, index) => (
+              <ListRow
+                key={`${item.id}-${index}`}
+                onClick={() => navigate(`/retailer/distributors/${item.distributorId}`)}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold text-text-primary">
+                      {item.name}
+                      {item.variant && (
+                        <span className="ml-1.5 font-normal text-text-muted">{item.variant}</span>
+                      )}
+                    </h3>
+                    {item.dueNow && <Badge variant="warning" dot>Ab due hai</Badge>}
+                  </div>
+                  <p className="mt-0.5 truncate text-2xs text-text-muted">{item.distributorName}</p>
+                  <p className="mt-1 flex items-center gap-1 text-2xs text-text-muted">
+                    <Clock size={11} /> {item.suggestion}
+                  </p>
+                </div>
+
+                <span className="flex-shrink-0 text-right">
+                  <span className="num block text-sm font-semibold text-text-primary">
+                    {rupees(item.price)}
+                  </span>
+                  <span className="block text-2xs text-text-muted">/ {item.unit}</span>
+                </span>
+                <RowChevron />
+              </ListRow>
+            ))}
+          </List>
+        </>
+      )}
     </div>
   );
 }
