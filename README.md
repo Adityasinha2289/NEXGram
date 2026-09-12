@@ -6,6 +6,16 @@
 
 ---
 
+> **Start here:** [SUBMISSION.md](SUBMISSION.md) — what is built, how to run it,
+> and what is deliberately out of scope.
+> [CONTRIBUTING.md](CONTRIBUTING.md) — development setup and conventions.
+>
+> This document is the original product and technical blueprint. It is the
+> reasoning behind the build, not a description of the current codebase; where
+> the two disagree, the code and SUBMISSION.md are current.
+
+---
+
 ## 1. Executive Summary
 
 Sanket is a hyper-local business intelligence engine for rural and semi-urban B2B commerce. It does **not** try to be a marketplace, a lending platform, a chatbot, a logistics network, and a demand forecaster all at once. It does one thing extremely well:
