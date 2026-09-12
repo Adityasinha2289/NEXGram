@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
+from app.core import audit
+from app.modules.distributors.service import derive_stock_status
 from app.models import Order, OrderItem, OrderStatusHistory, DistributorCatalogueItem, RetailerProfile, DistributorProfile
 from app.modules.orders import schemas
 import datetime
@@ -204,7 +206,21 @@ def create_order(db: Session, order_in: schemas.OrderCreate):
             reason="Order initially submitted"
         )
         db.add(history)
-        
+
+        audit.record(
+            db,
+            action="order.created",
+            entity_type="order",
+            entity_id=db_order.id,
+            actor_id=order_in.retailer_id,
+            metadata={
+                "order_number": db_order.order_number,
+                "distributor_id": db_order.distributor_id,
+                "total": subtotal,
+                "item_count": len(db_items),
+            },
+        )
+
         db.commit()
         return get_order_detail(db, db_order.id)
         
@@ -248,6 +264,11 @@ def update_order_status(db: Session, order_id: str, update_in: schemas.OrderStat
                     raise HTTPException(status_code=409, detail=f"Insufficient stock for catalogue item {item.catalogue_item_id} during acceptance. Available: {cat_item.available_stock}")
                     
                 cat_item.available_stock -= item.quantity
+                # Stock level and stock label must move together: an item left
+                # marked "available" at zero stock is counted as real supply by
+                # the supply-gap engine and closes a gap that is still open.
+                cat_item.stock_status = derive_stock_status(cat_item.available_stock)
+                cat_item.is_available = cat_item.available_stock > 0
                 
         # Timestamp logic
         now = datetime.datetime.now()
@@ -264,6 +285,8 @@ def update_order_status(db: Session, order_id: str, update_in: schemas.OrderStat
                     cat_item = db.query(DistributorCatalogueItem).filter(DistributorCatalogueItem.id == item.catalogue_item_id).with_for_update().first()
                     if cat_item:
                         cat_item.available_stock += item.quantity
+                        cat_item.stock_status = derive_stock_status(cat_item.available_stock)
+                        cat_item.is_available = cat_item.available_stock > 0
             
         order.status = update_in.status
         
@@ -276,7 +299,21 @@ def update_order_status(db: Session, order_id: str, update_in: schemas.OrderStat
             reason=update_in.reason
         )
         db.add(history)
-        
+
+        audit.record(
+            db,
+            action=f"order.{update_in.status}",
+            entity_type="order",
+            entity_id=order.id,
+            actor_id=update_in.changed_by,
+            metadata={
+                "order_number": order.order_number,
+                "from": old_status,
+                "to": update_in.status,
+                "reason": update_in.reason,
+            },
+        )
+
         db.commit()
         return get_order_detail(db, order.id)
         

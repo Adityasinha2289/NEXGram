@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from app.modules.products.schemas import ProductVariantSchema
 
@@ -44,3 +44,19 @@ class DistributorCatalogueItemResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CatalogueItemCreate(BaseModel):
+    product_variant_id: str
+    selling_price: float = Field(ge=0)
+    minimum_order_quantity: int = Field(default=1, ge=1)
+    available_stock: int = Field(default=0, ge=0)
+    delivery_time: Optional[str] = None
+
+
+class CatalogueItemUpdate(BaseModel):
+    selling_price: Optional[float] = Field(default=None, ge=0)
+    minimum_order_quantity: Optional[int] = Field(default=None, ge=1)
+    available_stock: Optional[int] = Field(default=None, ge=0)
+    delivery_time: Optional[str] = None
+    is_available: Optional[bool] = None

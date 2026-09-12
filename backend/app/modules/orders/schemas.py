@@ -7,7 +7,9 @@ class OrderItemCreate(BaseModel):
     quantity: int = Field(gt=0)
 
 class OrderCreate(BaseModel):
-    retailer_id: str
+    # Server-assigned from the access token; a client-supplied value is ignored,
+    # so it must not be required (and must never be trusted).
+    retailer_id: Optional[str] = None
     distributor_id: str
     items: List[OrderItemCreate] = Field(min_length=1)
     notes: Optional[str] = None
