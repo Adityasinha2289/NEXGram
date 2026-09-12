@@ -15,11 +15,13 @@ Kept separate from initial_seed.py on purpose: tests/conftest.py imports that
 module's four functions as fixtures, so it must keep its current shape.
 
 Run with:  python -m seed.demo_seed
+           python -m seed.demo_seed --reset   (wipe and rebuild)
 """
 
+import argparse
 from datetime import datetime, timedelta
 
-from app.core.database import SessionLocal
+from app.core.database import Base, SessionLocal
 from app.core.security import get_password_hash
 from app.models import (
     Category,
@@ -531,7 +533,7 @@ def build_order_history(db, retailers, distributors):
                 id=f"order_{order_seq:03d}",
                 retailer_id=spec["key"],
                 distributor_id=dist_spec["key"],
-                order_number=f"NXG-{placed.strftime('%y%m')}-{order_seq:04d}",
+                order_number=f"NEX-{placed.strftime('%Y%m%d')}-{order_seq:04d}",
                 status=status,
                 created_at=placed,
                 accepted_at=placed + timedelta(hours=4) if status in ("accepted", "completed") else None,
@@ -584,12 +586,30 @@ def build_order_history(db, retailers, distributors):
     return order_seq
 
 
-def run_seed():
+def wipe(db):
+    """Empty every table the seed writes to, dependents first.
+
+    Deletes rows rather than dropping tables so the alembic version stays put:
+    a dropped schema would need a migration run before the next seed, which is
+    exactly the step someone re-running the demo forgets.
+    """
+    for table in reversed(Base.metadata.sorted_tables):
+        if table.name == "alembic_version":
+            continue
+        db.execute(table.delete())
+    db.commit()
+
+
+def run_seed(reset: bool = False):
     db = SessionLocal()
     try:
         if db.query(Category).count() > 0:
-            print("Database already seeded — nothing to do.")
-            return
+            if not reset:
+                print("Database already seeded — nothing to do.")
+                print("Run with --reset to wipe it and build it again.")
+                return
+            print("Wiping existing data...")
+            wipe(db)
 
         print("Seeding demo dataset...")
         build_locations(db)
@@ -612,4 +632,10 @@ def run_seed():
 
 
 if __name__ == "__main__":
-    run_seed()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="delete existing rows before seeding, instead of refusing to run",
+    )
+    run_seed(reset=parser.parse_args().reset)

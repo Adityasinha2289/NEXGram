@@ -1,201 +1,203 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Search, ArrowLeft, Loader2 } from 'lucide-react';
-import { Input } from '../../../components/ui/Input';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { MapPin, Search, Truck } from 'lucide-react';
 import { EmptyState } from '../../../components/ui/EmptyState';
-import { CatalogueProductCard } from './components/CatalogueProductCard';
+import { ErrorState } from '../../../components/ui/ErrorState';
+import { Input } from '../../../components/ui/Input';
+import { List } from '../../../components/ui/List';
+import { Meta, PageHeader } from '../../../components/ui/PageHeader';
+import { SkeletonList } from '../../../components/ui/Skeleton';
+import { CatalogueRow } from './components/CatalogueRow';
+import { OrderDraftBar } from './components/OrderDraftBar';
 import { distributorsApi } from '../../../services/api/distributorsApi';
 import { ordersApi } from '../../../services/api/ordersApi';
+import { useApiResource } from '../../../hooks/useApiResource';
 
+const titleCase = (slug) => (slug
+  ? slug.split(/[-_]/).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
+  : 'Uncategorised');
+
+/**
+ * One supplier's catalogue, and an order built from it.
+ *
+ * The draft lives in component state and is scoped to this supplier, because an
+ * order is per-distributor on the server. It used to be written to
+ * localStorage under the key "nexgram_retailer_developer_pack" — a second thing
+ * called the Developer Pack that the actual, server-computed plan never read,
+ * so adding a product here changed nothing anywhere else in the app.
+ */
 export function Catalogue() {
   const { distributorId } = useParams();
   const navigate = useNavigate();
-  
-  const [packItems, setPackItems] = useState([]);
+
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const [distributorData, setDistributorData] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isOrdering, setIsOrdering] = useState(false);
-  const [error, setError] = useState(null);
-  
-  // Load Developer Pack
-  useEffect(() => {
-    try {
-      const savedPack = localStorage.getItem('nexgram_retailer_developer_pack');
-      if (savedPack) {
-        setPackItems(JSON.parse(savedPack));
-      }
-    } catch (e) {
-      console.error('Failed to parse developer pack', e);
-    }
-  }, []);
+  const [draft, setDraft] = useState({});
+  const [isPlacing, setIsPlacing] = useState(false);
+  const [orderError, setOrderError] = useState(null);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const distInfo = await distributorsApi.getDistributor(distributorId);
-      setDistributorData(distInfo);
-      
-      const catResponse = await distributorsApi.getDistributorCatalogue(distributorId, {
-        page_size: 100
-      });
-      
-      const mappedProducts = catResponse.items.map(item => ({
-        id: item.id,
-        name: `${item.product_name} (${item.variant_name})`,
-        category: item.category_slug ? item.category_slug.charAt(0).toUpperCase() + item.category_slug.slice(1) : 'Uncategorized',
-        unit: 'unit',
-        price: item.selling_price,
-        minimumOrderQuantity: item.minimum_order_quantity,
-        stockStatus: item.stock_status,
-        deliveryTime: item.delivery_time || 'N/A'
-      }));
+  const fetcher = useCallback(
+    async () => {
+      const [distributor, catalogue] = await Promise.all([
+        distributorsApi.getDistributor(distributorId),
+        distributorsApi.getDistributorCatalogue(distributorId, { page_size: 100 }),
+      ]);
+      return { distributor, items: catalogue.items || [] };
+    },
+    [distributorId],
+  );
+  const { data, isLoading, error, reload } = useApiResource(fetcher);
 
-      setProducts(mappedProducts);
-    } catch (err) {
-      console.error("Failed to fetch distributor catalogue:", err);
-      setError("Catalogue load karne mein error.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [distributorId]);
+  const products = useMemo(() => (data?.items || []).map((item) => ({
+    id: item.id,
+    name: item.product_name,
+    variant: item.variant_name,
+    category: titleCase(item.category_slug),
+    price: item.selling_price,
+    minimumOrderQuantity: item.minimum_order_quantity,
+    availableStock: item.available_stock,
+    stockStatus: item.stock_status,
+    deliveryTime: item.delivery_time,
+  })), [data]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleAddToPack = (product) => {
-    const newPack = [...packItems, product];
-    setPackItems(newPack);
-    localStorage.setItem('nexgram_retailer_developer_pack', JSON.stringify(newPack));
-  };
-
-  const handleCreateOrder = async () => {
-    try {
-      setIsOrdering(true);
-      const items = packItems.map(p => ({
-        catalogue_item_id: p.id,
-        quantity: p.minimumOrderQuantity || 1
-      }));
-
-      const payload = {
-        distributor_id: distributorId,
-        items: items,
-        notes: "Order from Developer Pack"
-      };
-
-      const res = await ordersApi.createOrder(payload);
-      
-      // Clear pack
-      localStorage.removeItem('nexgram_retailer_developer_pack');
-      setPackItems([]);
-      
-      // Navigate to order
-      navigate(`/retailer/orders/${res.id}`);
-      
-    } catch (err) {
-      console.error("Order creation failed", err);
-      alert("Order banane mein problem aayi: " + (err.message || "Unknown error"));
-    } finally {
-      setIsOrdering(false);
-    }
-  };
-
-  const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return products;
-    const q = searchQuery.toLowerCase();
-    return products.filter(p => 
-      p.name.toLowerCase().includes(q) || 
-      p.category.toLowerCase().includes(q)
+  const visible = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return products;
+    return products.filter(
+      (p) => `${p.name} ${p.variant}`.toLowerCase().includes(query)
+        || p.category.toLowerCase().includes(query),
     );
   }, [products, searchQuery]);
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
-  }
+  const lines = useMemo(
+    () => products
+      .filter((p) => draft[p.id])
+      .map((p) => ({ ...p, quantity: draft[p.id] })),
+    [products, draft],
+  );
+  const total = lines.reduce((sum, line) => sum + line.quantity * line.price, 0);
 
-  if (error || !distributorData) {
+  const addToDraft = (product) => {
+    setOrderError(null);
+    setDraft((prev) => ({
+      ...prev,
+      // Starting below the minimum order quantity would only produce a
+      // rejection from the server, so the first quantity is the MOQ.
+      [product.id]: Math.min(product.minimumOrderQuantity, product.availableStock),
+    }));
+  };
+
+  const setQuantity = (id, quantity) => setDraft((prev) => ({ ...prev, [id]: quantity }));
+
+  const removeFromDraft = (id) => setDraft((prev) => {
+    const next = { ...prev };
+    delete next[id];
+    return next;
+  });
+
+  const placeOrder = async () => {
+    setIsPlacing(true);
+    setOrderError(null);
+    try {
+      const order = await ordersApi.createOrder({
+        distributor_id: distributorId,
+        items: lines.map((line) => ({
+          catalogue_item_id: line.id,
+          quantity: line.quantity,
+        })),
+        notes: 'Catalogue se order',
+      });
+      setDraft({});
+      navigate(`/retailer/orders/${order.id}`);
+      return true;
+    } catch (err) {
+      setOrderError(err.message || 'Order nahi ja paya. Dobara try karein.');
+      return false;
+    } finally {
+      setIsPlacing(false);
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="py-12">
-        <EmptyState 
-          title="Catalogue Not Found" 
-          description={error || "Is distributor ka catalogue available nahi hai."}
-          actionLabel="Go Back"
-          onAction={() => navigate(-1)}
-        />
+      <div className="flex flex-col gap-5">
+        <SkeletonList rows={6} />
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col gap-6 animate-fade-in pb-24 h-full relative">
-      
-      {/* Header */}
-      <header className="flex items-center gap-4">
-        <button 
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 rounded-full hover:bg-surface-hover text-text-secondary transition-colors"
-        >
-          <ArrowLeft size={24} />
-        </button>
-        <div>
-          <h2 className="text-2xl font-bold text-text-primary leading-tight">{distributorData.business_name} Catalogue</h2>
-          <p className="text-sm text-text-muted mt-1">Select items to order</p>
-        </div>
-      </header>
+  if (error) return <ErrorState description={error} onRetry={reload} />;
 
-      {/* Floating Pack Summary */}
-      {packItems.length > 0 && (
-        <div 
-          className="bg-primary text-text-inverse px-4 py-2 rounded-lg shadow-md flex justify-between items-center cursor-pointer hover:bg-primary-dark transition-colors" 
-          onClick={handleCreateOrder}
-        >
-          <span className="text-sm font-medium">Developer Pack: {packItems.length} items</span>
-          {isOrdering ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <span className="text-xs font-bold uppercase tracking-wider">Place Order &rarr;</span>
-          )}
-        </div>
+  if (!data?.distributor) {
+    return (
+      <EmptyState
+        title="Catalogue nahi mila"
+        description="Is distributor ka catalogue available nahi hai."
+        actionLabel="Wapas jayein"
+        onAction={() => navigate(-1)}
+      />
+    );
+  }
+
+  const { distributor } = data;
+  const location = distributor.location || {};
+  const locationLine = [location.area, location.district].filter(Boolean).join(', ');
+
+  return (
+    <div className="flex animate-fade-in flex-col gap-5">
+      <PageHeader
+        eyebrow={distributor.business_category || 'Supplier'}
+        title={distributor.business_name}
+        description="Jo chahiye woh order mein daalein — order bhejne se pehle poora summary dikhega."
+        meta={
+          <>
+            {locationLine && <Meta icon={MapPin}>{locationLine}</Meta>}
+            {distributor.service_radius && <Meta icon={Truck}>{distributor.service_radius}</Meta>}
+          </>
+        }
+      />
+
+      <Input
+        icon={Search}
+        type="search"
+        placeholder="Is catalogue mein dhoondhein"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        aria-label="Catalogue mein dhoondhein"
+      />
+
+      {visible.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title={products.length === 0 ? 'Catalogue khaali hai' : 'Koi product nahi mila'}
+          description={
+            products.length === 0
+              ? 'Is distributor ne abhi koi product list nahi kiya.'
+              : 'Apna search badal kar dekhiye.'
+          }
+        />
+      ) : (
+        <List>
+          {visible.map((product) => (
+            <CatalogueRow
+              key={product.id}
+              product={product}
+              quantity={draft[product.id] || 0}
+              onAdd={addToDraft}
+              onChangeQuantity={setQuantity}
+              onRemove={removeFromDraft}
+            />
+          ))}
+        </List>
       )}
 
-      {/* Search */}
-      <div className="mt-2">
-        <Input
-          placeholder="Product ya category search karein..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          icon={Search}
-        />
-      </div>
-
-      {/* Product List */}
-      <div className="mt-2">
-        {filteredProducts.length === 0 ? (
-          <div className="py-10">
-            <EmptyState 
-              icon={Search}
-              title="Koi product nahi mila" 
-              description="Apna search badal ke try karein." 
-            />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {filteredProducts.map(product => (
-              <CatalogueProductCard 
-                key={product.id} 
-                product={product}
-                isAlreadyInPack={packItems.some(item => item.id === product.id)}
-                onAddToPack={handleAddToPack}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
+      <OrderDraftBar
+        lines={lines}
+        total={total}
+        distributorName={distributor.business_name}
+        isPlacing={isPlacing}
+        error={orderError}
+        onPlace={placeOrder}
+      />
     </div>
   );
 }

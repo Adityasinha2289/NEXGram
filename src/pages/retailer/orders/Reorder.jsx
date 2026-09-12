@@ -80,7 +80,11 @@ export function Reorder() {
                   <span className="num block text-sm font-semibold text-text-primary">
                     {rupees(item.price)}
                   </span>
-                  <span className="block text-2xs text-text-muted">/ {item.unit}</span>
+                  {/* Per pack, not per gram: `unit` is the variant's unit, so
+                      "/ g" priced a 200g pack as if it were a gram. */}
+                  <span className="block text-2xs text-text-muted">
+                    / {item.variant || item.unit}
+                  </span>
                 </span>
                 <RowChevron />
               </ListRow>

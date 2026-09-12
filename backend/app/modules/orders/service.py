@@ -7,11 +7,39 @@ from app.models import Order, OrderItem, OrderStatusHistory, DistributorCatalogu
 from app.modules.orders import schemas
 import datetime
 
+# One retry is enough: the second attempt reads a sequence that already
+# includes whichever order won the race.
+ORDER_NUMBER_RETRIES = 2
+
+
 def generate_order_number(db: Session) -> str:
-    # simple generator for demo: NEX-YYYYMMDD-HHMMSS-ID
-    now = datetime.datetime.now()
-    count = db.query(Order).count() + 1
-    return f"NEX-{now.strftime('%Y%m%d')}-{count:04d}"
+    """NEX-YYYYMMDD-NNNN, sequential within the day.
+
+    Derived from the highest number already issued today rather than from a
+    count of every order ever placed. The column is UNIQUE, and a count is not:
+    it repeats after any deletion, and two orders created in the same moment
+    both read the same count, so the second one fails the constraint and the
+    retailer gets a 500 for an order that was valid.
+
+    The caller retries on the remaining narrow race - two inserts between this
+    read and the commit - which is what closes it without a sequence table.
+    """
+    prefix = f"NEX-{datetime.datetime.now().strftime('%Y%m%d')}-"
+    latest = (
+        db.query(Order.order_number)
+        .filter(Order.order_number.like(f"{prefix}%"))
+        .order_by(Order.order_number.desc())
+        .first()
+    )
+    if not latest:
+        return f"{prefix}0001"
+    try:
+        next_seq = int(latest[0].rsplit("-", 1)[1]) + 1
+    except (IndexError, ValueError):
+        # A number that does not fit the scheme (an import, an older format)
+        # must not stop today's orders from being numbered.
+        next_seq = db.query(Order).filter(Order.order_number.like(f"{prefix}%")).count() + 1
+    return f"{prefix}{next_seq:04d}"
 
 def get_orders(db: Session, skip: int = 0, limit: int = 20, retailer_id: str = None, distributor_id: str = None):
     query = db.query(Order)
@@ -119,7 +147,14 @@ def get_order_detail(db: Session, order_id: str):
         "history": history
     }
 
-def create_order(db: Session, order_in: schemas.OrderCreate):
+def create_order(db: Session, order_in: schemas.OrderCreate, _attempt: int = 0):
+    """Place an order against one distributor.
+
+    Retries once on a duplicate order number. Two orders committed in the same
+    instant can read the same highest-number-today and pick the same next one;
+    the UNIQUE constraint catches that, and the second attempt reads a number
+    that now includes the first order.
+    """
     try:
         # Start transaction is implicit in SQLAlchemy Session, we commit at the end.
         
@@ -227,6 +262,14 @@ def create_order(db: Session, order_in: schemas.OrderCreate):
     except HTTPException:
         db.rollback()
         raise
+    except IntegrityError:
+        db.rollback()
+        if _attempt < ORDER_NUMBER_RETRIES:
+            return create_order(db, order_in, _attempt + 1)
+        raise HTTPException(
+            status_code=409,
+            detail="Order number generate nahi ho paya. Dobara try karein.",
+        )
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

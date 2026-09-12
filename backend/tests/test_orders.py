@@ -202,3 +202,43 @@ def test_stock_rollback_on_cancel(seed_data):
     paneer = db.query(DistributorCatalogueItem).filter_by(id=cat_paneer_id).first()
     assert paneer.available_stock == 40
     db.close()
+
+
+
+def test_order_number_survives_a_deleted_order(seed_data):
+    """The number used to come from a count of every order ever placed.
+
+    The column is UNIQUE and a count is not. Place two orders, delete the
+    first, and a count-based generator hands the third the number the second
+    one is already using - a unique violation, surfaced to the retailer as a
+    500 on an order that was perfectly valid.
+    """
+    ret_id = seed_data["profs"]["ret_1"].id
+    dist_id = seed_data["profs"]["dist_1"].id
+    cat_paneer_id = seed_data["catalogue"]["cat_paneer_sharma"].id
+
+    def place():
+        response = client.post("/api/orders", json={
+            "retailer_id": ret_id,
+            "distributor_id": dist_id,
+            "items": [{"catalogue_item_id": cat_paneer_id, "quantity": 5}],
+        })
+        assert response.status_code == 201, response.text
+        return response.json()
+
+    first, second = place(), place()
+    assert first["order_number"] != second["order_number"]
+    assert first["order_number"].startswith("NEX-")
+
+    db = TestingSessionLocal()
+    try:
+        from app.models import Order, OrderItem, OrderStatusHistory
+        db.query(OrderStatusHistory).filter_by(order_id=first["id"]).delete()
+        db.query(OrderItem).filter_by(order_id=first["id"]).delete()
+        db.query(Order).filter_by(id=first["id"]).delete()
+        db.commit()
+    finally:
+        db.close()
+
+    third = place()
+    assert third["order_number"] != second["order_number"]
