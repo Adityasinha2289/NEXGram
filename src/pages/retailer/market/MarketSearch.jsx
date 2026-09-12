@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, MapPin, Search, Store, TrendingUp, Truck } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
@@ -8,6 +8,8 @@ import { ErrorState } from '../../../components/ui/ErrorState';
 import { Input } from '../../../components/ui/Input';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { intelligenceApi } from '../../../services/api/intelligenceApi';
+import { useApiResource } from '../../../hooks/useApiResource';
+import { useDebounced } from '../../../hooks/useDebounced';
 
 const rupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
@@ -21,23 +23,17 @@ const rupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 export function MarketSearch() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [openId, setOpenId] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-    const timer = setTimeout(() => {
-      intelligenceApi.searchMarket({ q: query.trim() || undefined })
-        .then((res) => { if (!cancelled) setResults(res); })
-        .catch((err) => { if (!cancelled) setError(err.message || 'Search fail hui'); })
-        .finally(() => { if (!cancelled) setIsLoading(false); });
-    }, 250);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [query]);
+  // Debounced so a search is one request per pause, not one per keystroke -
+  // which matters on a connection the user is paying for by the megabyte.
+  const debouncedQuery = useDebounced(query, 300);
+  const fetcher = useCallback(
+    () => intelligenceApi.searchMarket({ q: debouncedQuery.trim() || undefined }),
+    [debouncedQuery],
+  );
+  const { data, isLoading, error, reload } = useApiResource(fetcher, { initialData: [] });
+  const results = useMemo(() => data || [], [data]);
 
   return (
     <div className="flex flex-col gap-4 pb-6 animate-fade-in">
@@ -56,7 +52,7 @@ export function MarketSearch() {
       />
 
       {error ? (
-        <ErrorState description={error} onRetry={() => setQuery((q) => q)} />
+        <ErrorState description={error} onRetry={reload} />
       ) : isLoading ? (
         <LoadingSpinner />
       ) : results.length === 0 ? (

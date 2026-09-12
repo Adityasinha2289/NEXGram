@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Check, ExternalLink, FileText, Info, Landmark, X } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -6,6 +6,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { schemesApi } from '../../services/api/schemesApi';
+import { useApiResource } from '../../hooks/useApiResource';
 
 const CHECK_STATE = {
   met: { icon: Check, className: 'text-success', label: 'Poora hota hai' },
@@ -22,27 +23,17 @@ const CHECK_STATE = {
  * decides. A wrong eligibility claim here costs someone real money.
  */
 export function Schemes() {
-  const [data, setData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [openId, setOpenId] = useState(null);
+  const fetcher = useCallback(() => schemesApi.getSchemes(), []);
+  const { data, isLoading, error, reload } = useApiResource(fetcher);
 
-  const load = () => {
-    setIsLoading(true);
-    setError(null);
-    schemesApi.getSchemes()
-      .then((res) => {
-        setData(res);
-        setOpenId(res.schemes?.[0]?.id ?? null);
-      })
-      .catch((err) => setError(err.message || 'Schemes load nahi hui'))
-      .finally(() => setIsLoading(false));
-  };
-
-  useEffect(load, []);
+  // Open the best-matching scheme by default so the page lands on something.
+  useEffect(() => {
+    if (data?.schemes?.length) setOpenId((current) => current ?? data.schemes[0].id);
+  }, [data]);
 
   if (isLoading) return <LoadingSpinner />;
-  if (error) return <ErrorState description={error} onRetry={load} />;
+  if (error) return <ErrorState description={error} onRetry={reload} />;
 
   const schemes = data?.schemes || [];
 

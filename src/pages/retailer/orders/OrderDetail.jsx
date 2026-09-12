@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { OrderTimeline } from '../../../components/ui/OrderTimeline';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -121,7 +121,7 @@ export function OrderDetail() {
         <CardContent className="p-4">
           <h3 className="font-bold text-md text-text-primary mb-3">Order Items</h3>
           <ul className="flex flex-col gap-3">
-            {order.items.map((item, i) => (
+            {order.items.map((item) => (
               <li key={item.id} className="flex justify-between items-start text-sm border-b border-border/50 pb-2 last:border-0 last:pb-0">
                 <div>
                   <span className="font-medium text-text-primary block">{item.product_name} ({item.variant_name})</span>

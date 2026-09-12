@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, Store, Package, Zap } from 'lucide-react';
+import { TrendingUp, Store, Package } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { ScoreRing } from '../../../components/ui/ScoreRing';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Store, MapPin, Wallet, ClipboardList, Package, User } from 'lucide-react';
+import { MapPin, Wallet, ClipboardList, User } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { storage } from '../../utils/storage';

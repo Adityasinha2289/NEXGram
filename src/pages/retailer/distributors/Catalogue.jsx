@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, ArrowLeft, Loader2 } from 'lucide-react';
 import { Input } from '../../../components/ui/Input';
-import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { CatalogueProductCard } from './components/CatalogueProductCard';
 import { distributorsApi } from '../../../services/api/distributorsApi';
