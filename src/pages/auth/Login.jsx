@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Card, CardContent } from '../../components/ui/Card';
+import { AuthShell } from './AuthShell';
+import { DEMO_ACCOUNTS } from '../../constants/demoAccounts';
 
 export function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  
+
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -16,25 +18,16 @@ export function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
-      setError(null);
       await login(mobile, password);
-      // Let ProtectedRoute or App handle navigation if role-based is needed, or we just navigate to dashboard here
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError(err.message || 'Login nahi ho paya. Mobile number aur password check karein.');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // For Dev only, to easily login
-  // Demo accounts from backend/seed/demo_seed.py. These must track the seed:
-  // stale shortcuts here just produce a 401 with no explanation.
-  const DEMO_ACCOUNTS = {
-    retailer: { mobile: '9000000001', password: 'demo1234', label: 'Gupta Kirana Store' },
-    distributor: { mobile: '9100000002', password: 'demo1234', label: 'Himachal Dairy Co' },
   };
 
   const loginAsDemo = async (role) => {
@@ -47,74 +40,87 @@ export function Login() {
       await login(account.mobile, account.password);
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Demo login failed.');
+      setError(err.message || 'Demo login nahi ho paya.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-fade-in">
-      <Card className="w-full max-w-md">
-        <CardContent className="p-6">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-primary mb-2">Welcome Back</h1>
-            <p className="text-text-muted text-sm">Login to continue to NEXGram</p>
-          </div>
+    <AuthShell
+      title="Wapas aane ka shukriya"
+      subtitle="NEXGram mein login karein."
+      footer={
+        <>
+          Naye hain?{' '}
+          <Link to="/register" className="font-semibold text-primary hover:underline">
+            Account banayein
+          </Link>
+        </>
+      }
+    >
+      {error && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-lg bg-danger-bg px-3 py-2.5 text-sm leading-snug text-danger"
+        >
+          <AlertCircle size={16} className="mt-0.5 flex-shrink-0" strokeWidth={2} />
+          {error}
+        </p>
+      )}
 
-          {error && (
-            <div className="bg-danger/10 text-danger text-sm p-3 rounded-lg mb-4 text-center">
-              {error}
-            </div>
-          )}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Input
+          label="Mobile number"
+          type="tel"
+          inputMode="numeric"
+          autoComplete="username"
+          value={mobile}
+          onChange={(e) => setMobile(e.target.value)}
+          placeholder="10 digit number"
+          required
+        />
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <Input
-              label="Mobile Number"
-              type="tel"
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
-              placeholder="Enter your 10 digit number"
-              required
-            />
-            
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
+        <Input
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
+        />
 
-            <Button type="submit" fullWidth disabled={isLoading} className="mt-2">
-              {isLoading ? 'Logging in...' : 'Login'}
+        <Button type="submit" size="lg" fullWidth isLoading={isLoading} className="mt-1">
+          Login
+        </Button>
+      </form>
+
+      <div className="text-center">
+        <Link
+          to="/forgot-password"
+          className="rounded-sm text-sm font-medium text-primary hover:underline"
+        >
+          Password bhool gaye?
+        </Link>
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-border pt-5">
+        <p className="eyebrow text-center">Demo accounts — ek tap mein</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {['retailer', 'distributor'].map((role) => (
+            <Button
+              key={role}
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+              onClick={() => loginAsDemo(role)}
+            >
+              {role === 'retailer' ? 'Retailer demo' : 'Distributor demo'}
             </Button>
-          </form>
-
-          <div className="mt-3 text-center">
-            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-              Password bhool gaye?
-            </Link>
-          </div>
-
-          <div className="mt-6 text-center text-sm text-text-muted">
-            Naye hain? <Link to="/register" className="text-primary font-medium hover:underline">Account Banayein</Link>
-          </div>
-
-          <div className="mt-8 pt-4 border-t border-border">
-            <p className="text-xs text-text-muted text-center mb-2">Demo accounts (ek tap mein login)</p>
-            <div className="flex justify-center gap-2 flex-wrap">
-              <Button variant="outline" size="sm" disabled={isLoading} onClick={() => loginAsDemo('retailer')}>
-                Retailer demo
-              </Button>
-              <Button variant="outline" size="sm" disabled={isLoading} onClick={() => loginAsDemo('distributor')}>
-                Distributor demo
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          ))}
+        </div>
+      </div>
+    </AuthShell>
   );
 }

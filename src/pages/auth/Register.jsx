@@ -1,115 +1,149 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Card, CardContent } from '../../components/ui/Card';
+import { AuthShell } from './AuthShell';
+
+const ROLES = [
+  { value: 'retailer', label: 'Retailer', caption: 'Main dukaan chalata hoon' },
+  { value: 'distributor', label: 'Distributor', caption: 'Main dukaanon ko supply karta hoon' },
+];
 
 export function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
     password: '',
-    role: 'retailer'
+    role: 'retailer',
   });
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
-      setError(null);
       await register(formData);
       // Onboarding is where demand and catalogue signals are captured, so a new
       // account goes there first; RequireOnboarding keeps them there until done.
       navigate(`/${formData.role}/onboarding`);
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
+      setError(err.message || 'Account nahi ban paya. Dobara try karein.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-fade-in">
-      <Card className="w-full max-w-md">
-        <CardContent className="p-6">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-primary mb-2">Create Account</h1>
-            <p className="text-text-muted text-sm">Join the NEXGram network</p>
+    <AuthShell
+      title="Account banayein"
+      subtitle="Do minute lagenge."
+      footer={
+        <>
+          Pehle se account hai?{' '}
+          <Link to="/login" className="font-semibold text-primary hover:underline">
+            Login karein
+          </Link>
+        </>
+      }
+    >
+      {error && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-lg bg-danger-bg px-3 py-2.5 text-sm leading-snug text-danger"
+        >
+          <AlertCircle size={16} className="mt-0.5 flex-shrink-0" strokeWidth={2} />
+          {error}
+        </p>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/*
+         * Two labelled choices rather than a segmented toggle: which side of the
+         * market someone is on changes the entire app they get, so it is worth
+         * more than a 28px tab with one word on it.
+         */}
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 text-sm font-medium text-text-secondary">Aap kaun hain?</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {ROLES.map((role) => {
+              const selected = formData.role === role.value;
+              return (
+                <label
+                  key={role.value}
+                  className={`flex cursor-pointer flex-col gap-0.5 rounded-lg border px-3 py-2.5 transition-colors ${
+                    selected
+                      ? 'border-primary bg-primary-light'
+                      : 'border-border bg-surface hover:border-border-strong'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="role"
+                    value={role.value}
+                    checked={selected}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                  <span
+                    className={`text-sm font-semibold ${selected ? 'text-primary-hover' : 'text-text-primary'}`}
+                  >
+                    {role.label}
+                  </span>
+                  <span className="text-2xs leading-snug text-text-muted">{role.caption}</span>
+                </label>
+              );
+            })}
           </div>
+        </fieldset>
 
-          {error && (
-            <div className="bg-danger/10 text-danger text-sm p-3 rounded-lg mb-4 text-center">
-              {error}
-            </div>
-          )}
+        <Input
+          label="Poora naam"
+          name="name"
+          autoComplete="name"
+          value={formData.name}
+          onChange={handleChange}
+          placeholder="Aapka naam"
+          required
+        />
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex gap-2 p-1 bg-surface-muted rounded-lg mb-2">
-              <button
-                type="button"
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${formData.role === 'retailer' ? 'bg-surface shadow-sm text-primary' : 'text-text-muted'}`}
-                onClick={() => setFormData(prev => ({ ...prev, role: 'retailer' }))}
-              >
-                Retailer
-              </button>
-              <button
-                type="button"
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${formData.role === 'distributor' ? 'bg-surface shadow-sm text-primary' : 'text-text-muted'}`}
-                onClick={() => setFormData(prev => ({ ...prev, role: 'distributor' }))}
-              >
-                Distributor
-              </button>
-            </div>
+        <Input
+          label="Mobile number"
+          name="mobile"
+          type="tel"
+          inputMode="numeric"
+          autoComplete="username"
+          value={formData.mobile}
+          onChange={handleChange}
+          placeholder="10 digit number"
+          required
+        />
 
-            <Input
-              label="Full Name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Aapka naam"
-              required
-            />
+        <Input
+          label="Password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Kam se kam 8 characters"
+          required
+        />
 
-            <Input
-              label="Mobile Number"
-              name="mobile"
-              type="tel"
-              value={formData.mobile}
-              onChange={handleChange}
-              placeholder="10 digit number"
-              required
-            />
-            
-            <Input
-              label="Password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Create a password"
-              required
-            />
-
-            <Button type="submit" fullWidth disabled={isLoading} className="mt-2">
-              {isLoading ? 'Creating Account...' : 'Register'}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center text-sm text-text-muted">
-            Already have an account? <Link to="/login" className="text-primary font-medium hover:underline">Login here</Link>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        <Button type="submit" size="lg" fullWidth isLoading={isLoading} className="mt-1">
+          Account banayein
+        </Button>
+      </form>
+    </AuthShell>
   );
 }

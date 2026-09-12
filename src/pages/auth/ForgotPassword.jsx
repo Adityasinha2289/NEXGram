@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, KeyRound, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Card, CardContent } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
+import { AuthShell } from './AuthShell';
 import { authApi } from '../../services/api/authApi';
 
 /**
@@ -54,91 +54,100 @@ export function ForgotPassword() {
     }
   };
 
+  if (done) {
+    return (
+      <AuthShell title="Password badal gaya" subtitle="Login page par bhej rahe hain…">
+        <ShieldCheck size={32} className="mx-auto text-success" strokeWidth={1.75} />
+      </AuthShell>
+    );
+  }
+
+  const errorNotice = error && (
+    <p
+      role="alert"
+      className="flex items-start gap-2 rounded-lg bg-danger-bg px-3 py-2.5 text-sm leading-snug text-danger"
+    >
+      <AlertCircle size={16} className="mt-0.5 flex-shrink-0" strokeWidth={2} />
+      {error}
+    </p>
+  );
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-fade-in">
-      <Card className="w-full max-w-md">
-        <CardContent className="p-6">
-          <Link to="/login" className="inline-flex items-center gap-1 text-sm text-text-muted mb-4 hover:text-primary">
-            <ArrowLeft size={15} /> Login par wapas
-          </Link>
+    <AuthShell
+      title="Password bhool gaye?"
+      subtitle={
+        step === 'request'
+          ? 'Apna registered mobile number daalein.'
+          : 'Jo code aaya hai woh aur naya password daalein.'
+      }
+      footer={
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-1 font-medium hover:text-text-primary"
+        >
+          <ArrowLeft size={14} /> Login par wapas
+        </Link>
+      }
+    >
+      {step === 'request' ? (
+        <form onSubmit={requestCode} className="flex flex-col gap-4">
+          <Input
+            label="Mobile number"
+            id="reset-mobile"
+            type="tel"
+            inputMode="numeric"
+            autoComplete="username"
+            placeholder="10 digit number"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            required
+          />
+          {errorNotice}
+          <Button type="submit" size="lg" fullWidth isLoading={isBusy}>
+            Code bhejein
+          </Button>
+        </form>
+      ) : (
+        <form onSubmit={confirmReset} className="flex flex-col gap-4">
+          <p className="rounded-lg bg-primary-light px-3 py-2.5 text-sm leading-snug text-text-secondary">
+            Agar <span className="num font-semibold text-text-primary">{mobile}</span> registered
+            hai, to code bhej diya gaya hai
+            {expiresIn ? ` (${expiresIn} minute tak valid)` : ''}.
+          </p>
 
-          {done ? (
-            <div className="text-center py-6">
-              <ShieldCheck size={40} className="text-success mx-auto mb-3" />
-              <h1 className="text-xl font-bold text-text-primary">Password badal gaya</h1>
-              <p className="text-sm text-text-muted mt-1">Login page par bhej rahe hain...</p>
-            </div>
-          ) : (
-            <>
-              <div className="text-center mb-6">
-                <KeyRound size={32} className="text-primary mx-auto mb-2" />
-                <h1 className="text-2xl font-bold text-primary">Password Bhool Gaye?</h1>
-                <p className="text-text-muted text-sm mt-1">
-                  {step === 'request'
-                    ? 'Apna registered mobile number daalein.'
-                    : 'Jo code aaya hai woh aur naya password daalein.'}
-                </p>
-              </div>
-
-              {step === 'request' ? (
-                <form onSubmit={requestCode} className="flex flex-col gap-4">
-                  <Input
-                    label="Mobile Number"
-                    id="reset-mobile"
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="10 digit number"
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
-                    required
-                  />
-                  {error && <p className="text-sm text-danger">{error}</p>}
-                  <Button type="submit" fullWidth disabled={isBusy}>
-                    {isBusy ? 'Bhej rahe hain...' : 'Code Bhejein'}
-                  </Button>
-                </form>
-              ) : (
-                <form onSubmit={confirmReset} className="flex flex-col gap-4">
-                  <div className="bg-primary-light border border-primary/20 rounded-lg p-3 text-sm text-text-secondary">
-                    Agar <span className="font-semibold text-text-primary">{mobile}</span> registered hai,
-                    to code bhej diya gaya hai{expiresIn ? ` (${expiresIn} minute tak valid)` : ''}.
-                  </div>
-
-                  <Input
-                    label="Reset Code"
-                    id="reset-code"
-                    inputMode="numeric"
-                    placeholder="6 digit code"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    required
-                  />
-                  <Input
-                    label="Naya Password"
-                    id="reset-password"
-                    type="password"
-                    placeholder="Kam se kam 8 characters"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                  />
-                  {error && <p className="text-sm text-danger">{error}</p>}
-                  <Button type="submit" fullWidth disabled={isBusy}>
-                    {isBusy ? 'Badal rahe hain...' : 'Password Badlein'}
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={() => { setStep('request'); setError(null); }}
-                    className="text-sm text-text-muted hover:text-primary"
-                  >
-                    Number galat hai? Badlein
-                  </button>
-                </form>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          <Input
+            label="Reset code"
+            id="reset-code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="6 digit code"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            required
+          />
+          <Input
+            label="Naya password"
+            id="reset-password"
+            type="password"
+            autoComplete="new-password"
+            placeholder="Kam se kam 8 characters"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+          />
+          {errorNotice}
+          <Button type="submit" size="lg" fullWidth isLoading={isBusy}>
+            Password badlein
+          </Button>
+          <button
+            type="button"
+            onClick={() => { setStep('request'); setError(null); }}
+            className="rounded-sm py-1 text-sm text-text-muted transition-colors hover:text-text-primary"
+          >
+            Number galat hai? Badlein
+          </button>
+        </form>
+      )}
+    </AuthShell>
   );
 }
