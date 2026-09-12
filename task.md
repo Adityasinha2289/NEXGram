@@ -1,0 +1,24 @@
+- `[ ]` Audit and fix Retailer Journey
+  - `[ ]` Dashboard
+  - `[ ]` Product Discovery (Search, Variants)
+  - `[ ]` Supplier Comparison
+  - `[ ]` Add to Procurement Basket
+  - `[ ]` Multi-Distributor Review and Checkout
+  - `[ ]` Order Detail & State Transitions
+  - `[ ]` Reorder & Price/MOQ Refresh
+  - `[ ]` Demand Batao & Demand Signal Generation
+  - `[ ]` Smart Stock Plan & AI Explanation Guardrails
+- `[ ]` Audit and fix Distributor Journey
+  - `[ ]` Dashboard / Intelligence Overview
+  - `[ ]` Opportunity Engine (Score, Confidence, Evidence)
+  - `[ ]` Catalogue Management (Stock, MOQ, Price)
+  - `[ ]` Incoming Orders & State transitions
+- `[ ]` Security and Integrations
+  - `[ ]` Data Isolation (Retailer vs Distributor)
+  - `[ ]` Mock removal (ensure data originates from DB/API)
+- `[ ]` Final Release Gate
+  - `[ ]` Test suite execution (Frontend & Backend)
+  - `[ ]` Linting execution
+  - `[ ]` Build verification
+  - `[ ]` Documentation update (40 point list)
+  - `[ ]` Git Push to origin
