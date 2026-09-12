@@ -1,262 +1,275 @@
 import { useNavigate } from 'react-router-dom';
-import { Target, Users, MapPin, PackageOpen, ListOrdered, ArrowRight, PlusCircle, TrendingUp, AlertCircle, CheckCircle2, Truck, Landmark } from 'lucide-react';
-import { Card, CardContent } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Landmark,
+  MapPin,
+  Package,
+  PlusCircle,
+  Target,
+  Truck,
+  Users,
+} from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ErrorState } from '../../components/ui/ErrorState';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { List, ListRow, RowChevron } from '../../components/ui/List';
+import { Meta, PageHeader } from '../../components/ui/PageHeader';
+import { ScoreRing } from '../../components/ui/ScoreRing';
+import { Section, SectionLink } from '../../components/ui/Section';
+import { SkeletonDashboard } from '../../components/ui/Skeleton';
+import { Stat, StatGroup } from '../../components/ui/Stat';
 import { useDashboard } from '../../hooks/useDashboard';
+
+const TONE_BY_VARIANT = {
+  success: 'positive',
+  primary: 'brand',
+  warning: 'caution',
+  danger: 'negative',
+};
 
 export function DistributorDashboard() {
   const navigate = useNavigate();
   const { data, isLoading, error, reload } = useDashboard('distributor');
 
-  if (isLoading) return <LoadingSpinner />;
+  if (isLoading) return <SkeletonDashboard />;
   if (error) return <ErrorState description={error} onRetry={reload} />;
   if (!data) return null;
 
   const { businessName, location, snapshot, demandGaps, retailerDemand, orders, catalogue } = data;
   const displayLocation = [location.area, location.district].filter(Boolean).join(', ');
 
+  // The bars below are shares of the largest category, not of the total: with
+  // one dominant category every other bar would round to nothing.
+  const busiestCategory = Math.max(1, ...retailerDemand.map((item) => item.count));
+  const needsAttention = orders.pending + orders.ready;
+
   return (
-    <div className="flex flex-col gap-6 pb-6 animate-fade-in">
-      {/* 1. HEADER / GREETING */}
-      <header>
-        <h2 className="text-2xl font-bold text-text-primary leading-tight">Namaste, {businessName}</h2>
-        <p className="text-text-muted mt-1 text-sm">Apne area mein naye business opportunities dekhiye.</p>
-        <div className="flex items-center gap-1 text-sm font-medium text-primary mt-2">
-          <MapPin size={16} />
-          <span>Serving: {displayLocation}</span>
+    <div className="flex animate-fade-in flex-col gap-6">
+      <PageHeader
+        eyebrow="Mera business"
+        title={`Namaste, ${businessName}`}
+        description="Aapke area mein kis cheez ki demand hai aur koi supply nahi kar raha — sab ek jagah."
+        meta={
+          <>
+            {displayLocation && <Meta icon={MapPin}>{displayLocation}</Meta>}
+            <Meta icon={Users}>{snapshot.retailersLooking} retailers demand bhej rahe hain</Meta>
+          </>
+        }
+        action={
+          <Button icon={PlusCircle} onClick={() => navigate('/distributor/catalogue')}>
+            Product add karo
+          </Button>
+        }
+      />
+
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)] lg:items-start lg:gap-7">
+        <div className="flex min-w-0 flex-col gap-6">
+          <Section
+            title="Local demand gaps"
+            description="Jo aapke area ke retailers maang rahe hain aur abhi koi supply nahi kar pa raha."
+            action={
+              demandGaps.length > 0 && (
+                <SectionLink onClick={() => navigate('/distributor/opportunities')}>
+                  Sab dekho
+                </SectionLink>
+              )
+            }
+          >
+            {demandGaps.length === 0 ? (
+              <EmptyState
+                icon={Target}
+                title="Abhi koi signal nahi"
+                description="Aapke area ke retailers ne abhi tak koi unmet demand report nahi ki. Signal aate hi yahaan dikhega."
+              />
+            ) : (
+              <List>
+                {demandGaps.map((gap) => (
+                  <ListRow
+                    key={gap.id}
+                    className="items-start gap-4"
+                    onClick={() => navigate('/distributor/opportunities')}
+                  >
+                    <div className="flex-shrink-0 pt-0.5">
+                      <ScoreRing
+                        score={gap.score}
+                        tier={gap.opportunity}
+                        confidence={gap.confidence}
+                        size="sm"
+                      />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      {/* A category-level gap has no product, so the engine
+                          labels it with the category — printing that twice
+                          reads like a rendering fault. */}
+                      {gap.category !== gap.product && <p className="eyebrow">{gap.category}</p>}
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                        <h4 className="text-base font-semibold leading-tight text-text-primary">
+                          {gap.product}
+                        </h4>
+                        <Badge variant={gap.badgeVariant} dot>{gap.opportunity}</Badge>
+                      </div>
+
+                      {/* The score never appears without the evidence under it. */}
+                      <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
+                        <div>
+                          <dt className="eyebrow">Retailers</dt>
+                          <dd className="num text-sm font-semibold text-text-primary">
+                            {gap.retailers}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="eyebrow">Demand</dt>
+                          <dd className="text-sm font-semibold text-text-primary">{gap.demand}</dd>
+                        </div>
+                        <div>
+                          <dt className="eyebrow">Local supply</dt>
+                          <dd className="text-sm font-semibold text-text-primary">{gap.supply}</dd>
+                        </div>
+                      </dl>
+                    </div>
+
+                    <RowChevron />
+                  </ListRow>
+                ))}
+              </List>
+            )}
+          </Section>
+
+          <Section
+            title="Retailer demand, category ke hisaab se"
+            description="Aapke district mein kis category ke liye sabse zyada dukaanein poochh rahi hain."
+          >
+            {retailerDemand.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="Koi demand signal nahi"
+                description="Is area se abhi tak koi demand signal nahi aaya."
+              />
+            ) : (
+              <List>
+                {retailerDemand.map((item) => (
+                  <ListRow key={item.id} onClick={() => navigate('/distributor/opportunities')}>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="truncate text-sm font-medium text-text-primary">
+                          {item.category}
+                        </p>
+                        <p className="num flex-shrink-0 text-sm font-semibold text-text-primary">
+                          {item.count}
+                          <span className="ml-1 text-2xs font-normal text-text-muted">
+                            retailer{item.count === 1 ? '' : 's'}
+                          </span>
+                        </p>
+                      </div>
+                      {/* A bar rather than a second number: the comparison
+                          between categories is the point, not the count. */}
+                      <div
+                        className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-sunken"
+                        role="img"
+                        aria-label={`${item.count} retailers`}
+                      >
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: `${Math.max(6, (item.count / busiestCategory) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <RowChevron />
+                  </ListRow>
+                ))}
+              </List>
+            )}
+          </Section>
         </div>
-      </header>
 
-      {/* 2. BUSINESS SNAPSHOT */}
-      <section className="grid grid-cols-3 gap-3">
-        <Card className="bg-surface border-border">
-          <CardContent className="p-3 flex flex-col items-center text-center justify-center h-full gap-1">
-            <Target className="text-success mb-1" size={20} />
-            <p className="text-lg font-bold text-text-primary leading-none">{snapshot.opportunityScore}</p>
-            <p className="eyebrow">Opportunity</p>
-            <p className="text-2xs text-success leading-tight mt-1">{snapshot.opportunityLabel}</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-surface border-border">
-          <CardContent className="p-3 flex flex-col items-center text-center justify-center h-full gap-1">
-            <Users className="text-primary mb-1" size={20} />
-            <p className="text-lg font-bold text-text-primary leading-none">{snapshot.retailersLooking}</p>
-            <p className="eyebrow">Retailers</p>
-            <p className="text-2xs text-text-muted leading-tight mt-1">{snapshot.retailersLabel}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface border-border">
-          <CardContent className="p-3 flex flex-col items-center text-center justify-center h-full gap-1">
-            <PackageOpen className="text-secondary mb-1" size={20} />
-            <p className="text-lg font-bold text-text-primary leading-none">{catalogue.totalProducts}</p>
-            <p className="eyebrow">Products</p>
-            <p className="text-2xs text-text-muted leading-tight mt-1">{catalogue.totalCategories} categories</p>
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* 8. QUICK ACTIONS */}
-      <section>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap md:overflow-visible">
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            icon={PlusCircle} 
-            className="flex-shrink-0 whitespace-nowrap shadow-sm"
-            onClick={() => navigate('/distributor/catalogue')}
-          >
-            Product Add Karo
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            icon={TrendingUp} 
-            className="flex-shrink-0 whitespace-nowrap bg-surface"
-            onClick={() => navigate('/distributor/opportunities')}
-          >
-            Opportunity Dekho
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            icon={ListOrdered} 
-            className="flex-shrink-0 whitespace-nowrap bg-surface"
-            onClick={() => navigate('/distributor/orders')}
-          >
-            Orders Dekho
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            icon={Landmark}
-            className="flex-shrink-0 whitespace-nowrap bg-surface"
-            onClick={() => navigate('/distributor/schemes')}
-          >
-            Schemes
-          </Button>
-        </div>
-      </section>
-
-      {/* 3. LOCAL DEMAND GAPS */}
-      <section className="bg-surface-muted -mx-4 px-4 py-6 border-y border-border md:mx-0 md:rounded-xl md:border md:px-5">
-        <div className="mb-4">
-          <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
-            Local Demand Gaps <TrendingUp size={18} className="text-primary" />
-          </h3>
-          <p className="text-sm text-text-muted">Retailers ke current requirements ke basis par</p>
-        </div>
-        
-        <div className="flex flex-col gap-4">
-          {demandGaps.length === 0 && (
-            <EmptyState
-              title="Abhi koi signal nahi"
-              description="Aapke area ke retailers ne abhi tak koi unmet demand report nahi ki."
+        <aside className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-[84px]">
+          <StatGroup>
+            <Stat
+              label="Top score"
+              value={snapshot.opportunityScore}
+              caption={snapshot.opportunityLabel}
+              tone={TONE_BY_VARIANT[snapshot.opportunityVariant] || 'default'}
             />
-          )}
-          {demandGaps.map(gap => (
-            <Card key={gap.id} className="border-l-4" style={{ borderLeftColor: `var(--color-${gap.badgeVariant})` }}>
-              <CardContent className="p-4 flex flex-col gap-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="eyebrow mb-0.5">{gap.category}</p>
-                    <h4 className="font-bold text-base text-text-primary leading-tight">{gap.product}</h4>
-                  </div>
-                  <Badge variant={gap.badgeVariant}>{gap.opportunity} Opportunity</Badge>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 text-sm bg-surface-muted p-2 rounded-md">
-                  <div>
-                    <span className="text-text-muted text-xs block">Demand</span>
-                    <span className="font-semibold text-text-primary">{gap.demand}</span>
-                  </div>
-                  <div>
-                    <span className="text-text-muted text-xs block">Retailers Looking</span>
-                    <span className="font-semibold text-text-primary">{gap.retailers}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-text-muted text-xs block">Local Supply</span>
-                    <span className="font-semibold text-text-primary">{gap.supply}</span>
-                  </div>
-                  <div className="col-span-2 border-t border-border pt-2">
-                    <span className="text-text-muted text-xs block">Score</span>
-                    <span className="font-semibold text-text-primary">
-                      {Math.round(gap.score)}/100 &middot; {gap.confidence} confidence &middot; {gap.retailers} retailer signals
-                    </span>
-                  </div>
-                </div>
+            <Stat
+              label="Retailers"
+              value={snapshot.retailersLooking}
+              caption={snapshot.retailersLabel}
+            />
+            <Stat
+              label="Products"
+              value={catalogue.totalProducts}
+              caption={`${catalogue.totalCategories} categories`}
+            />
+          </StatGroup>
 
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  fullWidth 
-                  className="mt-1"
-                  onClick={() => navigate('/distributor/opportunities')}
-                >
-                  Opportunity Dekho
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+          <Section
+            title="Orders"
+            action={
+              <SectionLink onClick={() => navigate('/distributor/orders')}>Dekho</SectionLink>
+            }
+          >
+            <List>
+              <ListRow onClick={() => navigate('/distributor/orders')}>
+                <AlertCircle size={16} className="flex-shrink-0 text-warning" strokeWidth={2} />
+                <span className="flex-1 text-sm text-text-secondary">Pending</span>
+                <span className="num text-sm font-semibold text-text-primary">{orders.pending}</span>
+              </ListRow>
+              <ListRow onClick={() => navigate('/distributor/orders')}>
+                <Truck size={16} className="flex-shrink-0 text-primary" strokeWidth={2} />
+                <span className="flex-1 text-sm text-text-secondary">Delivery ke liye ready</span>
+                <span className="num text-sm font-semibold text-text-primary">{orders.ready}</span>
+              </ListRow>
+              <ListRow onClick={() => navigate('/distributor/orders')}>
+                <CheckCircle2 size={16} className="flex-shrink-0 text-text-muted" strokeWidth={2} />
+                <span className="flex-1 text-sm text-text-secondary">Recently complete</span>
+                <span className="num text-sm font-semibold text-text-primary">
+                  {orders.completed}
+                </span>
+              </ListRow>
+            </List>
+            {needsAttention > 0 && (
+              <p className="text-2xs text-text-muted">
+                {needsAttention} order{needsAttention === 1 ? '' : 's'} aapke action ka intezaar
+                kar rahe hain.
+              </p>
+            )}
+          </Section>
 
-        {/* 4. OPPORTUNITY CTA */}
-        <Button 
-          variant="ghost" 
-          fullWidth 
-          icon={ArrowRight} 
-          className="mt-4 text-primary"
-          onClick={() => navigate('/distributor/opportunities')}
-        >
-          Saari Opportunities Dekho
-        </Button>
-      </section>
-
-      {/* 5. RETAILER DEMAND SECTION */}
-      <section>
-        <h3 className="font-bold text-lg text-text-primary mb-3">Retailer Demand</h3>
-        <Card>
-          <CardContent className="p-0">
-            <ul className="flex flex-col divide-y divide-border">
-              {retailerDemand.length === 0 && (
-                <li className="p-4 text-sm text-text-muted">Abhi is area se koi demand signal nahi aaya.</li>
-              )}
-              {retailerDemand.map((item) => (
-                <li key={item.id} className="flex items-center justify-between p-4 hover:bg-surface-muted transition-colors cursor-pointer" onClick={() => navigate('/distributor/opportunities')}>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary-light rounded-lg">
-                      <Users size={18} className="text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-text-primary">{item.count} retailers need</p>
-                      <p className="text-sm text-text-muted">{item.category} products</p>
-                    </div>
-                  </div>
-                  <ArrowRight size={18} className="text-text-muted" />
-                </li>
-              ))}
-            </ul>
-            <div className="p-3 border-t border-border">
-              <Button variant="ghost" size="sm" fullWidth onClick={() => navigate('/distributor/opportunities')}>
-                Demand Dekho
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* 6. CATALOGUE READINESS */}
-        <section>
-          <h3 className="font-bold text-lg text-text-primary mb-3">Catalogue Status</h3>
-          <Card className="h-full">
-            <CardContent className="p-4 flex flex-col justify-between h-full gap-4">
-              <div className="flex items-start gap-3">
-                <PackageOpen size={24} className="text-secondary flex-shrink-0" />
-                <div>
-                  <p className="font-bold text-text-primary">{catalogue.totalProducts} products listed</p>
-                  <p className="text-sm text-text-muted">{catalogue.totalCategories} categories covered</p>
+          <Section title="Shortcuts">
+            <List>
+              <ListRow onClick={() => navigate('/distributor/catalogue')}>
+                <Package size={16} className="flex-shrink-0 text-text-muted" strokeWidth={2} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-text-primary">Catalogue manage karo</p>
+                  <p className="num truncate text-2xs text-text-muted">
+                    {catalogue.totalProducts} products · {catalogue.totalCategories} categories
+                  </p>
                 </div>
-              </div>
-              <Button variant="outline" size="sm" fullWidth onClick={() => navigate('/distributor/catalogue')}>
-                Catalogue Manage Karo
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* 7. ORDERS NEEDING ATTENTION */}
-        <section>
-          <h3 className="font-bold text-lg text-text-primary mb-3">Orders Need Attention</h3>
-          <Card className="h-full">
-            <CardContent className="p-4 flex flex-col justify-between h-full gap-4">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-sm text-text-primary">
-                  <AlertCircle size={16} className="text-warning" />
-                  <span className="font-bold">{orders.pending} pending</span> orders
+                <RowChevron />
+              </ListRow>
+              <ListRow onClick={() => navigate('/distributor/opportunities')}>
+                <Target size={16} className="flex-shrink-0 text-text-muted" strokeWidth={2} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-text-primary">Saari opportunities</p>
+                  <p className="truncate text-2xs text-text-muted">Score aur evidence ke saath</p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-text-primary">
-                  <Truck size={16} className="text-primary" />
-                  <span className="font-bold">{orders.ready} ready</span> for delivery
+                <RowChevron />
+              </ListRow>
+              <ListRow onClick={() => navigate('/distributor/schemes')}>
+                <Landmark size={16} className="flex-shrink-0 text-text-muted" strokeWidth={2} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-text-primary">Sarkari schemes</p>
+                  <p className="truncate text-2xs text-text-muted">Aapke profile se match</p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-text-muted">
-                  <CheckCircle2 size={16} />
-                  <span>{orders.completed} recently completed</span>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" fullWidth onClick={() => navigate('/distributor/orders')}>
-                Orders Dekho
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
+                <RowChevron />
+              </ListRow>
+            </List>
+          </Section>
+        </aside>
       </div>
-
     </div>
   );
 }

@@ -1,111 +1,104 @@
-import { useState, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin } from 'lucide-react';
-import { Card, CardContent } from '../../../components/ui/Card';
+import { MapPin, Target } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
+import { Card } from '../../../components/ui/Card';
 import { EmptyState } from '../../../components/ui/EmptyState';
-import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
+import { ErrorState } from '../../../components/ui/ErrorState';
+import { PageHeader } from '../../../components/ui/PageHeader';
 import { ScoreRing } from '../../../components/ui/ScoreRing';
+import { SkeletonList } from '../../../components/ui/Skeleton';
 import { intelligenceApi } from '../../../services/api/intelligenceApi';
+import { useApiResource } from '../../../hooks/useApiResource';
 
 export function OpportunitiesList() {
   const navigate = useNavigate();
-  const [opportunities, setOpportunities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const fetcher = useCallback(() => intelligenceApi.getOpportunities(), []);
+  const { data, isLoading, error, reload } = useApiResource(fetcher);
 
-  useEffect(() => {
-    const fetchOpportunities = async () => {
-      try {
-        setLoading(true);
-        // GET /api/intelligence/opportunities
-        const res = await intelligenceApi.getOpportunities();
-        setOpportunities(res.items || []);
-      } catch (err) {
-        console.error("Failed to load opportunities:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOpportunities();
-  }, []);
-
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  if (opportunities.length === 0) {
-    return (
-      <div className="py-12">
-        <EmptyState 
-          title="No Opportunities Yet" 
-          description="Aapke service area ke liye abhi koi naye supply gaps detect nahi hue hain." 
-        />
-      </div>
-    );
-  }
+  const opportunities = data?.items || [];
 
   return (
-    <div className="flex flex-col gap-4 pb-20 animate-fade-in">
-      <header className="mb-2">
-        <h2 className="text-xl font-bold text-text-primary">Business Opportunities</h2>
-        <p className="text-sm text-text-muted mt-1">Data-driven demand gaps in your service area.</p>
-      </header>
+    <div className="flex animate-fade-in flex-col gap-6">
+      <PageHeader
+        eyebrow="Signals"
+        title="Business opportunities"
+        description="Aapke service area mein jo demand hai aur koi supply nahi kar pa raha. Har score ke neeche uska evidence hai."
+      />
 
-      <div className="flex flex-col gap-4">
-        {opportunities.map(opp => (
-          <Card 
-            key={opp.id} 
-            className="cursor-pointer hover:border-primary transition-colors"
-            onClick={() => navigate(`/distributor/opportunities/${opp.id}`)}
-          >
-            <CardContent className="p-4 flex flex-col gap-3">
-              <div className="flex justify-between items-start gap-3">
-                <div className="min-w-0">
-                  <p className="eyebrow mb-0.5">{opp.category}</p>
-                  <h4 className="font-bold text-base text-text-primary leading-tight">{opp.name}</h4>
-                  {opp.area && (
-                    <p className="text-xs text-text-muted mt-1 flex items-center gap-1">
-                      <MapPin size={12} /> {opp.area}
-                    </p>
-                  )}
+      {isLoading ? (
+        <SkeletonList rows={4} />
+      ) : error ? (
+        <ErrorState description={error} onRetry={reload} />
+      ) : opportunities.length === 0 ? (
+        <EmptyState
+          icon={Target}
+          title="Abhi koi opportunity nahi"
+          description="Aapke service area ke liye abhi koi naya supply gap detect nahi hua. Retailers ke signals aate hi yahaan dikhega."
+        />
+      ) : (
+        /*
+         * Two columns from 1024px. Each item carries a sentence of explanation,
+         * and a paragraph stretched across a 1200px row is unreadable — the
+         * column keeps the measure near 60 characters.
+         */
+        <div className="grid gap-4 lg:grid-cols-2">
+          {opportunities.map((opp) => (
+            <Card
+              key={opp.id}
+              interactive
+              className="cursor-pointer"
+              onClick={() => navigate(`/distributor/opportunities/${opp.id}`)}
+            >
+              <div className="flex items-start gap-4 p-4">
+                <div className="min-w-0 flex-1">
+                  {opp.category !== opp.name && <p className="eyebrow">{opp.category}</p>}
+                  <h3 className="mt-0.5 text-base font-semibold leading-tight text-text-primary">
+                    {opp.name}
+                  </h3>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Badge variant={opp.tierVariant} dot>{opp.tier}</Badge>
+                    {opp.area && (
+                      <span className="flex items-center gap-1 text-2xs text-text-muted">
+                        <MapPin size={11} /> {opp.area}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex-shrink-0">
                   <ScoreRing score={opp.score} tier={opp.tier} confidence={opp.confidence} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-sm bg-surface-muted p-2 rounded-md">
-                <div>
-                  <span className="text-text-muted text-xs block">Retailers asking</span>
-                  <span className="font-semibold text-text-primary">{opp.retailerCount}</span>
+              {/* The two figures the score is actually made of. */}
+              <dl className="mx-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border">
+                <div className="bg-surface-muted px-3 py-2">
+                  <dt className="eyebrow">Retailers asking</dt>
+                  <dd className="num mt-0.5 text-sm font-semibold text-text-primary">
+                    {opp.retailerCount}
+                  </dd>
                 </div>
-                <div>
-                  <span className="text-text-muted text-xs block">Can fulfil today</span>
-                  <span className="font-semibold text-text-primary">
+                <div className="bg-surface-muted px-3 py-2">
+                  <dt className="eyebrow">Can fulfil today</dt>
+                  <dd className="num mt-0.5 text-sm font-semibold text-text-primary">
                     {opp.supplierCount === 0
                       ? 'Koi supplier nahi'
-                      : `${opp.availableSupplierCount} of ${opp.supplierCount} listing${opp.supplierCount === 1 ? '' : 's'}`}
-                  </span>
+                      : `${opp.availableSupplierCount} of ${opp.supplierCount}`}
+                  </dd>
                 </div>
-              </div>
+              </dl>
 
-              {/* A score never appears without the evidence behind it. */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant={opp.tierVariant}>{opp.tier}</Badge>
-                <span className="text-xs text-text-muted">
-                  {opp.retailerCount} retailer signal{opp.retailerCount === 1 ? '' : 's'}
-                </span>
-              </div>
-
-              {/* Generated from the evidence object and checked against it before
+              {/* Rendered from the evidence object and checked against it before
                   display, so it cannot state a figure the engine did not produce. */}
-              <p className="text-sm text-text-secondary leading-snug">
-                {opp.explanation?.text || opp.evidence?.summary || 'Opportunity detected based on local demand.'}
+              <p className="p-4 text-sm leading-relaxed text-text-secondary">
+                {opp.explanation?.text
+                  || opp.evidence?.summary
+                  || 'Local demand ke basis par opportunity detect hui hai.'}
               </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
