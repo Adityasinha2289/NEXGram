@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - run: pip install -r requirements.txt
+
+      - name: Migrations apply cleanly from empty
+        # Catches a migration that only works against a database that already
+        # has the tables, which local development would never reveal.
+        run: alembic upgrade head
+        env:
+          DATABASE_URL: sqlite:///./ci.db
+
+      - name: Migrations match the models
+        # A model edited without a migration passes every test and then fails on
+        # deploy. Autogenerate should find nothing left to do.
+        run: |
+          alembic revision --autogenerate -m "ci drift check" --rev-id ci_drift
+          if grep -qE '^\s+op\.(create|drop|alter|add)_' alembic/versions/ci_drift_*.py; then
+            echo "::error::Models have drifted from migrations. Run alembic revision --autogenerate."
+            cat alembic/versions/ci_drift_*.py
+            exit 1
+          fi
+          rm alembic/versions/ci_drift_*.py
+        env:
+          DATABASE_URL: sqlite:///./ci.db
+
+      - run: pytest -q
+
+  frontend:
+    name: Frontend (lint + build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  docker:
+    name: Images build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t nexgram-api ./backend
+      - run: docker build -f Dockerfile.web -t nexgram-web .
