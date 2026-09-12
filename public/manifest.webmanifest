@@ -1,0 +1,21 @@
+{
+  "name": "NEXGram — Local Business Intelligence",
+  "short_name": "NEXGram",
+  "description": "Turns local demand and supply signals into an explainable stocking decision for rural retailers and distributors.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f9fa",
+  "theme_color": "#2b7a0b",
+  "lang": "en-IN",
+  "categories": ["business", "productivity", "shopping"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
