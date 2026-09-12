@@ -22,3 +22,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+backend/venv/
+backend/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Local databases and secrets — never commit these
+*.db
+*.sqlite3
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
