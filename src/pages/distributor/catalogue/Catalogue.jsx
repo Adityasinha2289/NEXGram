@@ -10,7 +10,7 @@ import { SkeletonList } from '../../../components/ui/Skeleton';
 import { Stat, StatGroup } from '../../../components/ui/Stat';
 
 import { useCatalogue } from './hooks/useCatalogue';
-import { ProductRow } from './components/ProductRow';
+import { ProductRow, ProductRowHeader } from './components/ProductRow';
 import { ProductForm } from './components/ProductForm';
 import { CatalogueFilters } from './components/CatalogueFilters';
 
@@ -149,6 +149,7 @@ export function Catalogue() {
             />
           ) : (
             <List>
+              <ProductRowHeader />
               {products.map((product) => (
                 <ProductRow
                   key={product.id}
