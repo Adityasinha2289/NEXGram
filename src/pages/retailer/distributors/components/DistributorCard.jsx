@@ -34,20 +34,30 @@ export function DistributorCard({ distributor, packMatchCount, totalPackItems })
       className="cursor-pointer p-4"
       onClick={() => navigate(`/retailer/distributors/${distributor.id}`)}
     >
+      {/*
+       * The match chip sits under the name rather than beside it. Sharing the
+       * row, it took a third of a two-column card and left "Sharma Di..." and
+       * "Himac..." where a supplier's name should be.
+       */}
       <div className="flex items-start gap-3">
         <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-primary-light text-primary">
           <Store size={17} strokeWidth={2} />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold leading-tight text-text-primary">
+          <h3 className="text-sm font-semibold leading-snug text-text-primary">
             {distributor.name}
           </h3>
           <p className="mt-0.5 truncate text-2xs text-text-muted">
             {distributor.categories.join(' · ')}
           </p>
         </div>
-        {match && <Badge variant={match.variant} dot>{match.label}</Badge>}
       </div>
+
+      {match && (
+        <div className="mt-2">
+          <Badge variant={match.variant} dot>{match.label}</Badge>
+        </div>
+      )}
 
       <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-border pt-3">
         {facts.map((fact) => (

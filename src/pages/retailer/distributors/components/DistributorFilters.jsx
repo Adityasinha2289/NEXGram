@@ -26,7 +26,7 @@ export function DistributorFilters({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <Input
           placeholder="Distributor ya category dhoondhein"
           value={searchQuery}
@@ -36,10 +36,10 @@ export function DistributorFilters({
           aria-label="Distributor dhoondhein"
         />
 
-        <label className="flex flex-shrink-0 items-center gap-2 text-sm text-text-muted">
-          <span className="sr-only sm:not-sr-only">Sort</span>
+        <label className="flex w-full flex-shrink-0 items-center gap-2 text-sm text-text-muted lg:w-auto">
+          <span className="sr-only lg:not-sr-only">Sort</span>
           <select
-            className="h-[42px] cursor-pointer rounded-md border border-border-strong bg-surface px-3 text-sm text-text-primary transition-colors hover:border-text-faint focus:border-primary focus:outline-none"
+            className="h-[42px] w-full cursor-pointer rounded-md border border-border-strong bg-surface px-3 text-sm text-text-primary transition-colors hover:border-text-faint focus:border-primary focus:outline-none lg:w-auto"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
