@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Store, Truck, ChevronDown, Check, PackageOpen } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { MapPin, Store, Truck, Check, PackageOpen } from 'lucide-react';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -15,7 +15,6 @@ const rupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
 export function ProductDetail() {
   const { productId } = useParams();
-  const navigate = useNavigate();
   const { addItem, getQuantity } = useBasket();
   
   const fetcher = useCallback(() => productsApi.getProductWithSuppliers(productId), [productId]);

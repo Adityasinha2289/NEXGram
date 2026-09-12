@@ -4,7 +4,7 @@ import { Clock, Package } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { ErrorState } from '../../../components/ui/ErrorState';
-import { List, ListRow, RowChevron } from '../../../components/ui/List';
+import { List } from '../../../components/ui/List';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { SkeletonList } from '../../../components/ui/Skeleton';
 import { intelligenceApi } from '../../../services/api/intelligenceApi';
