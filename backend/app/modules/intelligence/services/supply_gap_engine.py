@@ -100,13 +100,14 @@ class SupplyGapEngine:
                 else:
                     out_of_stock.add(dist_id)
             
+            # A distributor can list several variants at different stock levels, so
+            # the sets overlap. Grade each distributor by its best status via set
+            # difference; subtracting cardinalities would miscount whenever the
+            # overlap isn't total.
             supplier_count = len(unique_suppliers)
             available_count = len(available)
-            low_stock_count = len(low_stock) - len(available)
-            if low_stock_count < 0: low_stock_count = 0
-            
-            out_of_stock_count = len(out_of_stock) - len(available) - len(low_stock)
-            if out_of_stock_count < 0: out_of_stock_count = 0
+            low_stock_count = len(low_stock - available)
+            out_of_stock_count = len(out_of_stock - available - low_stock)
 
             # 4. Determine Supply Level & Gap Score
             if available_count >= 4:

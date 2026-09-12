@@ -1,22 +1,20 @@
-from typing import Generator, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
+from app.core.database import get_db
 from app.core.security import ALGORITHM, SECRET_KEY
 from app.models.users import User
 from app.models.profiles import RetailerProfile, DistributorProfile
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-def get_db() -> Generator:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Re-exported, not redefined. FastAPI caches dependencies by function identity,
+# so a second get_db here would open a second session per request, and objects
+# loaded by get_current_user could not then be written through a router's own
+# session ("already attached to session X").
+__all__ = ["get_db", "get_current_user", "get_current_retailer", "get_current_distributor", "get_current_admin"]
 
 def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)

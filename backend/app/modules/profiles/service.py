@@ -1,31 +1,47 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.users import User
 from app.models.profiles import RetailerProfile, DistributorProfile, Location
 from app.modules.profiles import schemas
 
 def get_or_create_location(db: Session, location_data: schemas.LocationBase, existing_loc_id: str = None) -> str:
+    """Resolves a submitted address to a shared Location row.
+
+    Locations are the unit the intelligence layer aggregates over: two shops in
+    Palampur Market only produce one demand signal cluster if they point at the
+    *same* row. So this matches on (state, district, area) before creating
+    anything, and never edits an existing row in place — rewriting a shared
+    location would silently relocate every other business sitting on it.
+    """
     if not location_data:
         return existing_loc_id
-    
-    if existing_loc_id:
-        loc = db.query(Location).filter_by(id=existing_loc_id).first()
-        if loc:
-            if location_data.area is not None: loc.area = location_data.area
-            if location_data.block is not None: loc.block = location_data.block
-            if location_data.district is not None: loc.district = location_data.district
-            if location_data.state is not None: loc.state = location_data.state
-            if location_data.pin is not None: loc.pincode = location_data.pin
-            db.commit()
-            return loc.id
-            
-    # Create new
-    loc = Location(
-        area=location_data.area,
-        block=location_data.block,
-        district=location_data.district,
-        state=location_data.state,
-        pincode=location_data.pin
-    )
+
+    # Fall back to whatever the profile already had for fields left blank, so a
+    # partial onboarding patch doesn't resolve to a half-empty location.
+    current = db.query(Location).filter_by(id=existing_loc_id).first() if existing_loc_id else None
+
+    def field(submitted, fallback):
+        value = submitted if submitted is not None else (fallback if current else None)
+        return value.strip() if isinstance(value, str) else value
+
+    area = field(location_data.area, getattr(current, "area", None))
+    district = field(location_data.district, getattr(current, "district", None))
+    state = field(location_data.state, getattr(current, "state", None))
+    block = field(location_data.block, getattr(current, "block", None))
+    pincode = field(location_data.pin, getattr(current, "pincode", None))
+
+    if not any([area, district, state]):
+        return existing_loc_id
+
+    match = db.query(Location).filter(
+        func.lower(func.coalesce(Location.area, "")) == (area or "").lower(),
+        func.lower(func.coalesce(Location.district, "")) == (district or "").lower(),
+        func.lower(func.coalesce(Location.state, "")) == (state or "").lower(),
+    ).first()
+    if match:
+        return match.id
+
+    loc = Location(area=area, block=block, district=district, state=state, pincode=pincode)
     db.add(loc)
     db.commit()
     db.refresh(loc)

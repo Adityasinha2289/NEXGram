@@ -129,12 +129,19 @@ class DemandEngine:
                 unique_signals[key] = s
         
         insert_stmt = insert(DemandSignal).values(list(unique_signals.values()))
-        
-        # On conflict do nothing for identical signals
-        on_conflict_stmt = insert_stmt.on_conflict_do_nothing(
-            index_elements=['id']
+
+        # The signal ID is keyed on retailer/product/category/type/source but not
+        # on location, so a shop that corrects its address during onboarding would
+        # otherwise keep reporting demand against the place it first typed. Refresh
+        # the mutable fields rather than skipping the row.
+        on_conflict_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=['id'],
+            set_={
+                'location_id': insert_stmt.excluded.location_id,
+                'confidence': insert_stmt.excluded.confidence,
+            }
         )
-        
+
         db.execute(on_conflict_stmt)
         db.commit()
 
