@@ -6,14 +6,6 @@ import pytest
 
 client = TestClient(app)
 
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_db] = override_get_db
 
 def test_get_categories(seed_data):
     response = client.get("/api/categories")

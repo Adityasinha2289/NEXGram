@@ -11,28 +11,22 @@ from app.api.deps import get_current_retailer, get_current_user
 from app.models.profiles import RetailerProfile
 from app.models.users import User
 
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
+@pytest.fixture(autouse=True)
+def signed_in(db):
+    """Signs these tests in as the seeded retailer and distributor.
 
-def mock_get_current_retailer():
-    db = TestingSessionLocal()
-    profile = db.query(RetailerProfile).filter_by(id="ret_ramesh").first()
-    db.close()
-    return profile
-
-def mock_get_current_user():
-    db = TestingSessionLocal()
-    user = db.query(User).filter_by(id="usr_dist_1").first() # dist_sharma
-    db.close()
-    return user
-
-app.dependency_overrides[get_db] = override_get_db
-app.dependency_overrides[get_current_retailer] = mock_get_current_retailer
-app.dependency_overrides[get_current_user] = mock_get_current_user
+    Per test rather than at module scope: overrides are global on the app
+    object, so setting them once leaked into every other test file and made the
+    suite order-dependent. They also resolve against the active test session, so
+    the profile they return belongs to the same transaction as the request.
+    """
+    app.dependency_overrides[get_current_retailer] = (
+        lambda: db.query(RetailerProfile).filter_by(id="ret_ramesh").first()
+    )
+    app.dependency_overrides[get_current_user] = (
+        lambda: db.query(User).filter_by(id="usr_dist_1").first()  # dist_sharma
+    )
+    yield
 
 def test_create_valid_order(seed_data):
     ret_id = seed_data["profs"]["ret_1"].id
