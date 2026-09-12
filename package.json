@@ -1,7 +1,7 @@
 {
-  "name": "bbb",
+  "name": "nexgram",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,10 +16,13 @@
     "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
     "oxlint": "^1.79.0",
+    "tailwindcss": "^4.3.3",
     "vite": "^8.2.2"
-  }
+  },
+  "description": "Local business intelligence for rural B2B commerce"
 }

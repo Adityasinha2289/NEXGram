@@ -1,9 +1,22 @@
-:root {
-  /* Colors - Rural Professional Theme */
+@import "tailwindcss";
+
+/*
+ * Design tokens — Rural Professional Theme.
+ *
+ * Colours live in @theme so Tailwind generates the utilities the components
+ * already use: --color-surface-muted becomes bg-surface-muted, --color-text-muted
+ * becomes text-text-muted, and so on. Tailwind also emits every token here as a
+ * CSS custom property on :root, so the *.module.css files keep resolving var(--color-*).
+ *
+ * Non-colour tokens stay in the plain :root block below. Putting them in @theme
+ * would override Tailwind's own --radius-*, --shadow-* and --text-* scales and
+ * silently change what rounded-lg / shadow-sm / text-sm mean.
+ */
+@theme {
   --color-primary: #2b7a0b;
   --color-primary-hover: #1e5c08;
   --color-primary-light: #e8f5e9;
-  
+
   --color-secondary: #f4a261;
   --color-secondary-hover: #e76f51;
   --color-secondary-light: #fff3e0;
@@ -12,7 +25,7 @@
   --color-surface: #ffffff;
   --color-surface-muted: #f1f3f5;
   --color-border: #e9ecef;
-  
+
   --color-text-primary: #212529;
   --color-text-secondary: #495057;
   --color-text-muted: #6c757d;
@@ -24,14 +37,36 @@
   --color-success-bg: #d1e7dd;
   --color-warning: #ffc107;
   --color-warning-bg: #fff3cd;
+  --color-warning-light: #fff3cd;
   --color-info: #0dcaf0;
   --color-info-bg: #cff4fc;
+
+  --animate-fade-in: fade-in 0.25s ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+:root {
+  /* Aliases for names the *.module.css files reference. */
+  --color-error: var(--color-danger);
+  --color-error-bg: var(--color-danger-bg);
+  --color-text-main: var(--color-text-primary);
 
   /* Typography (rem-based) */
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-md: 1rem;
+  --font-size-base: 1rem;
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.25rem;
   --font-size-2xl: 1.5rem;
@@ -53,10 +88,15 @@
   --radius-full: 9999px;
 
   /* Shadows (subtle) */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 2px 4px rgba(0,0,0,0.06);
-  --shadow-lg: 0 4px 6px rgba(0,0,0,0.08);
-  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.08);
+
+  /* Chrome dimensions, shared by Layout, TopNav and BottomNav so they cannot
+     drift out of alignment. */
+  --bottom-nav-height: 70px;
+  --sidebar-width: 220px;
+
   /* Layout constraints */
   --max-width-mobile: 480px;
   --max-width-tablet: 768px;
@@ -69,28 +109,41 @@
   --z-toast: 200;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/*
+ * No `* { margin: 0; padding: 0 }` here.
+ *
+ * Tailwind emits its utilities inside `@layer utilities`, and an unlayered rule
+ * beats any layered one regardless of specificity, so that reset silently
+ * zeroed every p-*, px-*, m-* and gap in the app. Tailwind's own preflight
+ * already normalises box-sizing and element margins.
+ */
 
-body {
-  font-family: var(--font-family);
-  background-color: var(--color-background);
-  color: var(--color-text-primary);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
+/*
+ * Element defaults go in @layer base so Tailwind utilities still win. Unlayered,
+ * `a { color: inherit }` beat every text-* utility on a link, and
+ * `button { font-size: inherit }` beat every text-sm/text-xs on a button.
+ */
+@layer base {
+  body {
+    font-family: var(--font-family);
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
 
-a {
-  text-decoration: none;
-  color: inherit;
-}
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
 
-button, input, select, textarea {
-  font-family: inherit;
-  font-size: inherit;
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    font-size: inherit;
+  }
 }
 
 /* Base App Layout */
@@ -103,38 +156,16 @@ button, input, select, textarea {
 .main-content {
   flex: 1;
   width: 100%;
-  max-width: var(--max-width-desktop); /* Updated to allow desktop usage, but constrained */
-  margin: 0 auto;
   background-color: var(--color-background);
   position: relative;
   overflow-x: hidden; /* No horizontal scroll */
 }
 
-/* Utility Classes */
-.text-center { text-align: center; }
-.text-muted { color: var(--color-text-muted); }
-.text-xs { font-size: var(--font-size-xs); }
-.text-sm { font-size: var(--font-size-sm); }
-.text-md { font-size: var(--font-size-md); }
-.text-lg { font-size: var(--font-size-lg); }
-.font-bold { font-weight: 700; }
-
-.mt-2 { margin-top: var(--spacing-sm); }
-.mt-4 { margin-top: var(--spacing-md); }
-.mt-6 { margin-top: var(--spacing-lg); }
-.mb-2 { margin-bottom: var(--spacing-sm); }
-.mb-4 { margin-bottom: var(--spacing-md); }
-.mb-6 { margin-bottom: var(--spacing-lg); }
-.p-4 { padding: var(--spacing-md); }
-
-.flex { display: flex; }
-.flex-col { display: flex; flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
-.gap-2 { gap: var(--spacing-sm); }
-.gap-4 { gap: var(--spacing-md); }
-.gap-6 { gap: var(--spacing-lg); }
-
-.w-full { width: 100%; }
-.h-full { height: 100%; }
+/* Used on the horizontal card strips. Not a Tailwind core utility. */
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
