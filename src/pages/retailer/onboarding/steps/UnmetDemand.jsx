@@ -41,9 +41,9 @@ export function UnmetDemand({ data, updateData, onNext }) {
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
-      <div className="text-center mt-4">
-        <h2 className="text-2xl font-bold text-text-primary">Aisi kaunsi cheez hai jo customers maangte hain but aapke paas usually nahi hoti?</h2>
-        <p className="text-text-muted mt-2">Yeh humein naye suppliers dhoondhne mein madad karega.</p>
+      <div>
+        <h2 className="text-xl font-bold leading-tight text-text-primary">Aisi kaunsi cheez hai jo customers maangte hain but aapke paas usually nahi hoti?</h2>
+        <p className="mt-1.5 text-sm leading-snug text-text-muted">Yeh humein naye suppliers dhoondhne mein madad karega.</p>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -67,7 +67,7 @@ export function UnmetDemand({ data, updateData, onNext }) {
         </div>
       </div>
 
-      {error && <p className="text-danger text-sm text-center">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
       <Button size="lg" fullWidth onClick={validateAndNext} className="mt-4">
         Aage Badho

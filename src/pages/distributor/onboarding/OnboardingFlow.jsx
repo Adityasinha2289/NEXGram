@@ -44,7 +44,15 @@ export function OnboardingFlow() {
 
   useEffect(() => {
     if (profile?.profile_data) {
-      setData(prev => ({ ...prev, ...profile.profile_data }));
+      // name and mobile sit on the profile response itself, not inside
+      // profile_data, so spreading profile_data alone left step one blank for
+      // a user whose name the server already knew.
+      setData(prev => ({
+        ...prev,
+        ...profile.profile_data,
+        name: profile.profile_data.name || profile.name || prev.name,
+        mobile: profile.profile_data.mobile || profile.mobile || prev.mobile,
+      }));
     }
   }, [profile]);
 
@@ -119,7 +127,7 @@ export function OnboardingFlow() {
       currentStep={currentStep} 
       totalSteps={TOTAL_STEPS}
       onBack={currentStep > 1 ? handleBack : null}
-      title="Aage Badho"
+      title="Apna business set karein"
     >
       <div className={isSaving ? 'opacity-50 pointer-events-none' : ''}>
         {renderStep()}

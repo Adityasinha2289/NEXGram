@@ -46,7 +46,7 @@ export function Requirements({ data, updateData, onNext }) {
   return (
     <div className="flex flex-col gap-8 animate-fade-in">
       <div className="flex flex-col gap-4">
-        <div className="text-center mt-4">
+        <div>
           <h2 className="text-xl font-bold text-text-primary">Aapko abhi business mein kis cheez ki sabse zyada zarurat hai?</h2>
         </div>
 
@@ -80,7 +80,7 @@ export function Requirements({ data, updateData, onNext }) {
         </div>
       </div>
 
-      {error && <p className="text-danger text-sm text-center">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
       <Button size="lg" fullWidth onClick={validateAndNext} className="mt-4">
         Profile Complete Karo

@@ -39,10 +39,10 @@ export function Location({ data, updateData, onNext }) {
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
-      <div className="text-center mt-4">
-        <h2 className="text-2xl font-bold text-text-primary">Aapka business kahan located hai?</h2>
+      <div>
+        <h2 className="text-xl font-bold leading-tight text-text-primary">Aapka business kahan located hai?</h2>
         {isDetected && (
-          <p className="text-sm text-text-muted mt-2">
+          <p className="mt-1.5 text-sm leading-snug text-text-muted">
             Is location ke basis par hum nearby demand aur business opportunities analyse karenge.
           </p>
         )}
@@ -64,7 +64,7 @@ export function Location({ data, updateData, onNext }) {
           >
             Auto-Detect Location
           </Button>
-          {error && <p className="text-danger text-sm text-center">{error}</p>}
+          {error && <p role="alert" className="text-sm text-danger">{error}</p>}
         </div>
       ) : (
         <Card className="border-primary bg-primary-light">

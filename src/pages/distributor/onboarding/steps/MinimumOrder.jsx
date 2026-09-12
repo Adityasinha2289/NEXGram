@@ -37,8 +37,8 @@ export function MinimumOrder({ data, updateData, onNext }) {
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
-      <div className="text-center mt-4">
-        <h2 className="text-2xl font-bold text-text-primary">Aapka minimum order approx kitna hota hai?</h2>
+      <div>
+        <h2 className="text-xl font-bold leading-tight text-text-primary">Aapka minimum order approx kitna hota hai?</h2>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -64,7 +64,7 @@ export function MinimumOrder({ data, updateData, onNext }) {
         )}
       </div>
 
-      {error && <p className="text-danger text-sm text-center">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
       <Button size="lg" fullWidth onClick={validateAndNext} className="mt-4">
         Aage Badho

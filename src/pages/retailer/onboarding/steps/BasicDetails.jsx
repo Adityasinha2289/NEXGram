@@ -21,9 +21,9 @@ export function BasicDetails({ data, updateData, onNext }) {
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
-      <div className="text-center mt-4">
-        <h2 className="text-2xl font-bold text-text-primary">Sabse pehle, aapke baare mein</h2>
-        <p className="text-text-muted mt-2">Apni basic details confirm karein</p>
+      <div>
+        <h2 className="text-xl font-bold leading-tight text-text-primary">Sabse pehle, aapke baare mein</h2>
+        <p className="mt-1.5 text-sm leading-snug text-text-muted">Apni basic details confirm karein</p>
       </div>
 
       <Card className="border-border">
