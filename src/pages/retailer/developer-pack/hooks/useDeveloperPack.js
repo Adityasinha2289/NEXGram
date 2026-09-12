@@ -22,7 +22,8 @@ export function useDeveloperPack() {
     setIsLoading(true);
     setError(null);
     try {
-      setPack(await intelligenceApi.getDeveloperPack());
+      const res = await intelligenceApi.getDeveloperPack();
+      setPack(res);
       setRemovedIds([]);
       setExtraItems([]);
     } catch (err) {
@@ -32,10 +33,28 @@ export function useDeveloperPack() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    let cancelled = false;
+    intelligenceApi.getDeveloperPack()
+      .then((res) => {
+        if (!cancelled) {
+          setPack(res);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err.message || 'Pack load nahi hua');
+          setIsLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const packItems = useMemo(() => {
-    const suggested = (pack?.items || []).filter(item => !removedIds.includes(item.id));
+    const suggested = (pack?.items || []).filter((item) => !removedIds.includes(item.id));
     return [...suggested, ...extraItems];
   }, [pack, removedIds, extraItems]);
 
@@ -44,26 +63,26 @@ export function useDeveloperPack() {
     [packItems],
   );
 
-  const budget = pack?.budget || { min: 0, max: null };
+  const budget = useMemo(() => pack?.budget || { min: 0, max: null }, [pack]);
 
   const budgetStatus = useMemo(() => {
     if (budget.max && totalEstimatedPrice > budget.max) return 'Over budget';
     if (budget.min && totalEstimatedPrice < budget.min) return 'Under budget';
     return 'Budget ke andar';
-  }, [totalEstimatedPrice, budget]);
+  }, [totalEstimatedPrice, budget.min, budget.max]);
 
   const removeProduct = (id) => {
-    setExtraItems(prev => prev.filter(item => item.id !== id));
-    setRemovedIds(prev => (prev.includes(id) ? prev : [...prev, id]));
+    setExtraItems((prev) => prev.filter((item) => item.id !== id));
+    setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
   };
 
   const addProduct = (product) => {
     if (removedIds.includes(product.id)) {
-      setRemovedIds(prev => prev.filter(id => id !== product.id));
+      setRemovedIds((prev) => prev.filter((id) => id !== product.id));
       return;
     }
-    if (!packItems.find(item => item.id === product.id)) {
-      setExtraItems(prev => [...prev, product]);
+    if (!packItems.find((item) => item.id === product.id)) {
+      setExtraItems((prev) => [...prev, product]);
     }
   };
 

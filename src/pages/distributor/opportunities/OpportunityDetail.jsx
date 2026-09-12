@@ -106,7 +106,14 @@ export function OpportunityDetail() {
               {breakdown.map((part) => (
                 <div key={part.label} className="flex flex-col gap-1.5 px-4 py-3">
                   <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="font-medium text-text-primary">{part.label}</span>
+                    <span className="font-medium text-text-primary flex items-center gap-2">
+                      {part.label}
+                      {part.source_type && (
+                        <Badge variant={part.source_type === 'OBSERVED' ? 'success' : part.source_type === 'MODEL_INFERENCE' ? 'primary' : 'default'} dot>
+                          {part.source_type.replace('_', ' ')}
+                        </Badge>
+                      )}
+                    </span>
                     <span className="num flex-shrink-0 text-text-muted">
                       {Math.round(part.points)} / {Math.round(part.max)}
                     </span>

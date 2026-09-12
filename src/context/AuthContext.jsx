@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { authApi } from '../services/api/authApi';
 import { profilesApi } from '../services/api/profilesApi';
-
-const AuthContext = createContext(null);
+import { DEMO_ACCOUNTS } from '../constants/demoAccounts';
+import { IS_EXPLORATION_MODE } from '../constants/config';
+import { AuthContext } from './AuthContextCore';
 
 const SESSION_CACHE_KEY = 'nexgram_session_cache';
 
@@ -40,7 +41,7 @@ function clearSessionCache() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => Boolean(localStorage.getItem('nexgram_access_token')));
 
   const fetchCurrentUser = useCallback(async () => {
     const token = localStorage.getItem('nexgram_access_token');
@@ -92,7 +93,45 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    fetchCurrentUser();
+    let cancelled = false;
+    const token = localStorage.getItem('nexgram_access_token');
+    if (token) {
+      authApi.getMe()
+        .then(async (user) => {
+          if (cancelled) return;
+          setCurrentUser(user);
+          let profData = null;
+          try {
+            if (user.role === 'retailer') {
+              profData = await profilesApi.getRetailerProfile();
+            } else if (user.role === 'distributor') {
+              profData = await profilesApi.getDistributorProfile();
+            }
+            if (!cancelled) setProfile(profData);
+          } catch {
+            if (!cancelled) setProfile(readSessionCache()?.profile ?? null);
+          }
+          writeSessionCache(user, profData);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          if (err.status === 401 || err.status === 403) {
+            setCurrentUser(null);
+            setProfile(null);
+            localStorage.removeItem('nexgram_access_token');
+            clearSessionCache();
+          } else {
+            const cached = readSessionCache();
+            if (cached?.user) {
+              setCurrentUser(cached.user);
+              setProfile(cached.profile ?? null);
+            }
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
+    }
 
     // Listen for unauthorized events emitted by fetchApi
     const handleUnauthorized = () => {
@@ -102,8 +141,11 @@ export function AuthProvider({ children }) {
       clearSessionCache();
     };
     window.addEventListener('auth:unauthorized', handleUnauthorized);
-    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
-  }, [fetchCurrentUser]);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
+  }, []);
 
   const login = async (mobile, password) => {
     const res = await authApi.login(mobile, password);
@@ -126,6 +168,21 @@ export function AuthProvider({ children }) {
     setProfile(null);
   };
 
+  /**
+   * Exploration Mode: Switch session to a seeded development account
+   * for either retailer or distributor seamlessly with a real backend JWT.
+   */
+  const switchRole = async (targetRole) => {
+    const account = DEMO_ACCOUNTS[targetRole];
+    if (!account) return;
+    setIsLoading(true);
+    try {
+      await login(account.mobile, account.password);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       currentUser,
@@ -135,17 +192,11 @@ export function AuthProvider({ children }) {
       isAuthenticated: !!currentUser,
       login,
       register,
-      logout
+      logout,
+      switchRole,
+      isExplorationMode: IS_EXPLORATION_MODE,
     }}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }

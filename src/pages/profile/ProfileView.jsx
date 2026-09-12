@@ -5,7 +5,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Meta, PageHeader } from '../../components/ui/PageHeader';
 import { Section } from '../../components/ui/Section';
 import { Skeleton } from '../../components/ui/Skeleton';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 
 const NOT_SET = 'Set nahi kiya';
 

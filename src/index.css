@@ -11,6 +11,17 @@
  * Non-colour, non-type tokens stay in the plain :root block below.
  */
 @theme {
+  /* Brand palette for marketing/landing pages */
+  --color-brand-900: #0F2A1D;
+  --color-brand-800: #164532;
+  --color-brand-700: #375534;
+  --color-brand-500: #6B9071;
+  --color-brand-300: #AEC3B0;
+  --color-brand-100: #E3EED4;
+  --color-brand-50: #F8F5EA;
+
+  --font-display: 'Outfit', sans-serif;
+
   /* Deep field green: the brand colour, dark enough to carry white text at
      the contrast an outdoor phone screen needs. */
   --color-primary: #216c11;

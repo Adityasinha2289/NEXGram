@@ -12,6 +12,7 @@ import { OrderDraftBar } from './components/OrderDraftBar';
 import { distributorsApi } from '../../../services/api/distributorsApi';
 import { ordersApi } from '../../../services/api/ordersApi';
 import { useApiResource } from '../../../hooks/useApiResource';
+import { useBasket } from '../../../context/useBasket';
 
 const titleCase = (slug) => (slug
   ? slug.split(/[-_]/).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
@@ -29,9 +30,10 @@ const titleCase = (slug) => (slug
 export function Catalogue() {
   const { distributorId } = useParams();
   const navigate = useNavigate();
+  const { addItem, updateQuantity, removeItem, clearBasket, getDistributorDraft } = useBasket();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [draft, setDraft] = useState({});
+  const draft = getDistributorDraft(distributorId);
   const [isPlacing, setIsPlacing] = useState(false);
   const [orderError, setOrderError] = useState(null);
 
@@ -78,21 +80,12 @@ export function Catalogue() {
 
   const addToDraft = (product) => {
     setOrderError(null);
-    setDraft((prev) => ({
-      ...prev,
-      // Starting below the minimum order quantity would only produce a
-      // rejection from the server, so the first quantity is the MOQ.
-      [product.id]: Math.min(product.minimumOrderQuantity, product.availableStock),
-    }));
+    addItem(product, distributorId, data?.distributor?.business_name);
   };
 
-  const setQuantity = (id, quantity) => setDraft((prev) => ({ ...prev, [id]: quantity }));
+  const setQuantity = (id, quantity) => updateQuantity(id, quantity, distributorId);
 
-  const removeFromDraft = (id) => setDraft((prev) => {
-    const next = { ...prev };
-    delete next[id];
-    return next;
-  });
+  const removeFromDraft = (id) => removeItem(id, distributorId);
 
   const placeOrder = async () => {
     setIsPlacing(true);
@@ -106,7 +99,7 @@ export function Catalogue() {
         })),
         notes: 'Catalogue se order',
       });
-      setDraft({});
+      clearBasket(distributorId);
       navigate(`/retailer/orders/${order.id}`);
       return true;
     } catch (err) {

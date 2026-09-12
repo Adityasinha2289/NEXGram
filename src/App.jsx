@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import { AuthProvider } from './context/AuthContext';
+import { BasketProvider } from './context/BasketContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { RequireOnboarding } from './components/auth/RequireOnboarding';
 import { Login } from './pages/auth/Login';
@@ -23,6 +24,9 @@ import { OrderDetail as RetailerOrderDetail } from './pages/retailer/orders/Orde
 import { Reorder } from './pages/retailer/orders/Reorder';
 import { ReportDemand } from './pages/retailer/demand/ReportDemand';
 import { MarketSearch } from './pages/retailer/market/MarketSearch';
+import { ProductDiscovery } from './pages/retailer/products/ProductDiscovery';
+import { ProductDetail } from './pages/retailer/products/ProductDetail';
+import { ProcurementReview } from './pages/retailer/procurement/ProcurementReview';
 
 import { DistributorDashboard } from './pages/distributor/Dashboard';
 import { OnboardingFlow as DistributorOnboarding } from './pages/distributor/onboarding/OnboardingFlow';
@@ -60,7 +64,11 @@ function App() {
               
               {/* Retailer Routes */}
               <Route element={<ProtectedRoute allowedRoles={['retailer']} />}>
-                <Route path="/retailer" element={<RequireOnboarding />}>
+                <Route path="/retailer" element={
+                  <BasketProvider>
+                    <RequireOnboarding />
+                  </BasketProvider>
+                }>
                   <Route path="onboarding" element={<RetailerOnboarding />} />
                   <Route path="dashboard" element={<Layout title="Home" role="retailer" width="wide"><RetailerDashboard /></Layout>} />
                   <Route path="profile" element={<Layout title="Profile" role="retailer" showBack width="narrow"><RetailerProfile /></Layout>} />
@@ -71,6 +79,9 @@ function App() {
                   <Route path="orders" element={<Layout title="Orders" role="retailer"><RetailerOrders /></Layout>} />
                   <Route path="orders/:orderId" element={<Layout title="Order" role="retailer" showBack><RetailerOrderDetail /></Layout>} />
                   <Route path="market" element={<Layout title="Search" role="retailer"><MarketSearch /></Layout>} />
+                  <Route path="products" element={<Layout title="Products" role="retailer"><ProductDiscovery /></Layout>} />
+                  <Route path="products/:productId" element={<Layout title="Product" role="retailer" showBack><ProductDetail /></Layout>} />
+                  <Route path="procurement" element={<Layout title="Basket" role="retailer"><ProcurementReview /></Layout>} />
                   <Route path="report-demand" element={<Layout title="Demand report" role="retailer" showBack width="narrow"><ReportDemand /></Layout>} />
                   <Route path="reorder" element={<Layout title="Reorder" role="retailer" showBack><Reorder /></Layout>} />
                   <Route path="schemes" element={<Layout title="Schemes" role="retailer" showBack><Schemes /></Layout>} />

@@ -40,13 +40,10 @@ export function ReportDemand() {
   useEffect(() => { loadReports(); }, []);
 
   useEffect(() => {
-    if (selected || query.trim().length < 2) {
-      setMatches([]);
-      return;
-    }
+    if (selected || query.trim().length < 2) return;
     let cancelled = false;
-    setIsSearching(true);
     const timer = setTimeout(() => {
+      setIsSearching(true);
       productsApi.getProducts({ search: query, page_size: 12 })
         .then((res) => { if (!cancelled) setMatches(res.items || []); })
         .catch(() => { if (!cancelled) setMatches([]); })
@@ -54,6 +51,11 @@ export function ReportDemand() {
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [query, selected]);
+
+  const activeMatches = useMemo(
+    () => (selected || query.trim().length < 2 ? [] : matches),
+    [selected, query, matches],
+  );
 
   const canSubmit = useMemo(
     () => Boolean(selected) || query.trim().length >= 2,
@@ -125,9 +127,9 @@ export function ReportDemand() {
 
               {isSearching && <SkeletonList rows={2} className="border-0" />}
 
-              {matches.length > 0 && (
+              {activeMatches.length > 0 && (
                 <div className="max-h-52 divide-y divide-border overflow-y-auto rounded-lg border border-border">
-                  {matches.map((product) => (
+                  {activeMatches.map((product) => (
                     <button
                       key={product.id}
                       type="button"
@@ -145,7 +147,7 @@ export function ReportDemand() {
                 </div>
               )}
 
-              {!isSearching && query.trim().length >= 2 && matches.length === 0 && (
+              {!isSearching && query.trim().length >= 2 && activeMatches.length === 0 && (
                 <p className="text-2xs leading-snug text-text-muted">
                   List mein nahi mila? Koi baat nahi — aapka likha hua bhi signal banta hai.
                 </p>

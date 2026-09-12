@@ -11,6 +11,7 @@ import {
   Store,
   Target,
   User,
+  ShoppingCart,
 } from 'lucide-react';
 
 /**
@@ -25,11 +26,12 @@ const NAV = {
   retailer: {
     primary: [
       { to: '/retailer/dashboard', icon: Home, label: 'Home' },
-      { to: '/retailer/market', icon: Search, label: 'Search' },
-      { to: '/retailer/developer-pack', icon: Sparkles, label: 'Pack' },
+      { to: '/retailer/products', icon: Search, label: 'Products' },
+      { to: '/retailer/procurement', icon: ShoppingCart, label: 'Basket' },
       { to: '/retailer/orders', icon: ClipboardList, label: 'Orders' },
     ],
     secondary: [
+      { to: '/retailer/developer-pack', icon: Sparkles, label: 'Pack' },
       { to: '/retailer/distributors', icon: Store, label: 'Distributors' },
       { to: '/retailer/reorder', icon: RotateCcw, label: 'Reorder' },
       { to: '/retailer/schemes', icon: Landmark, label: 'Schemes' },

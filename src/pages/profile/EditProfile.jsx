@@ -7,7 +7,7 @@ import { Field } from '../../components/ui/FieldGroup';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Section } from '../../components/ui/Section';
 import { Skeleton } from '../../components/ui/Skeleton';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { categoriesApi } from '../../services/api/categoriesApi';
 import { intelligenceApi } from '../../services/api/intelligenceApi';
 import { profilesApi } from '../../services/api/profilesApi';
@@ -40,29 +40,59 @@ const money = (band) => {
   return `${fmt(parts[0])} – ${fmt(parts[1])}`;
 };
 
+function buildValuesFromProfile(profile, role) {
+  if (!profile?.profile_data) return null;
+  const data = profile.profile_data;
+  return role === 'retailer'
+    ? {
+        business_name: data.businessName || '',
+        business_type: data.businessType || '',
+        area: data.location?.area || '',
+        district: data.location?.district || '',
+        state: data.location?.state || '',
+        demanded_categories: data.demandedCategories || [],
+        unmet_categories: data.unmetNeeds?.categories || [],
+        unmet_other: data.unmetNeeds?.other || '',
+        monthly_sales_range: data.monthlyPurchaseRange || '',
+        investment_budget: data.investmentBudget || '',
+        purchase_frequency: data.purchasingFrequency || '',
+      }
+    : {
+        business_name: data.businessName || '',
+        business_category: data.businessCategory || '',
+        area: data.location?.area || '',
+        district: data.location?.district || '',
+        state: data.location?.state || '',
+        product_categories: data.productCategories || [],
+        service_radius: data.serviceRadius || '',
+        minimum_order_range: data.minimumOrderRange || '',
+        retailer_coverage: data.retailerCoverage || '',
+        delivery_capabilities: data.deliveryCapabilities || [],
+        stock_level: data.stockCapacity?.level || '',
+      };
+}
+
 /**
- * Editing a profile after onboarding.
+ * Edit an existing profile.
  *
- * This is not cosmetic. A retailer's demand signal is derived entirely from
- * their categories, unmet needs and location, and a distributor's eligibility
- * for an opportunity comes from their categories and area. Without this screen
- * both are frozen at whatever was typed on the day they signed up.
- *
- * Category options come from the API rather than a hardcoded list, because a
- * value that does not match a real category resolves to nothing and produces a
- * signal the engine silently discards.
+ * Saves directly against the backend and triggers a recompute of the
+ * intelligence pipeline, because changes in categories or service radius
+ * immediately change which opportunities and developer packs are valid.
  */
 export function EditProfile() {
   const navigate = useNavigate();
   const { currentUser, profile, setProfile } = useAuth();
   const role = currentUser?.role;
 
-  const [values, setValues] = useState(null);
+  const [formEdits, setFormEdits] = useState(null);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
+
+  const defaultValues = useMemo(() => buildValuesFromProfile(profile, role), [profile, role]);
+  const values = formEdits ?? defaultValues;
 
   useEffect(() => {
     categoriesApi.getCategories()
@@ -73,40 +103,6 @@ export function EditProfile() {
       .catch(() => setCategories([]))
       .finally(() => setIsLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (!profile?.profile_data) return;
-    const data = profile.profile_data;
-    setValues(
-      role === 'retailer'
-        ? {
-            business_name: data.businessName || '',
-            business_type: data.businessType || '',
-            area: data.location?.area || '',
-            district: data.location?.district || '',
-            state: data.location?.state || '',
-            demanded_categories: data.demandedCategories || [],
-            unmet_categories: data.unmetNeeds?.categories || [],
-            unmet_other: data.unmetNeeds?.other || '',
-            monthly_sales_range: data.monthlyPurchaseRange || '',
-            investment_budget: data.investmentBudget || '',
-            purchase_frequency: data.purchasingFrequency || '',
-          }
-        : {
-            business_name: data.businessName || '',
-            business_category: data.businessCategory || '',
-            area: data.location?.area || '',
-            district: data.location?.district || '',
-            state: data.location?.state || '',
-            product_categories: data.productCategories || [],
-            service_radius: data.serviceRadius || '',
-            minimum_order_range: data.minimumOrderRange || '',
-            retailer_coverage: data.retailerCoverage || '',
-            delivery_capabilities: data.deliveryCapabilities || [],
-            stock_level: data.stockCapacity?.level || '',
-          },
-    );
-  }, [profile, role]);
 
   const fields = useMemo(() => {
     if (role === 'retailer') {
@@ -162,7 +158,7 @@ export function EditProfile() {
   }, [role, categories]);
 
   const change = (key, value) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
+    setFormEdits((prev) => ({ ...(prev || defaultValues || {}), [key]: value }));
     setSaved(false);
   };
 

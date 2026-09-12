@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Check, ChevronDown, ExternalLink, FileText, Info, Landmark, X } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -23,16 +23,12 @@ const CHECK_STATE = {
  * decides. A wrong eligibility claim here costs someone real money.
  */
 export function Schemes() {
-  const [openId, setOpenId] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
   const fetcher = useCallback(() => schemesApi.getSchemes(), []);
   const { data, isLoading, error, reload } = useApiResource(fetcher);
 
-  // Open the best-matching scheme by default so the page lands on something.
-  useEffect(() => {
-    if (data?.schemes?.length) setOpenId((current) => current ?? data.schemes[0].id);
-  }, [data]);
-
   const schemes = data?.schemes || [];
+  const openId = selectedId !== null ? selectedId : (schemes[0]?.id ?? null);
 
   return (
     <div className="flex animate-fade-in flex-col gap-5">
@@ -75,7 +71,7 @@ export function Schemes() {
               <li key={scheme.id}>
                 <button
                   type="button"
-                  onClick={() => setOpenId(isOpen ? null : scheme.id)}
+                  onClick={() => setSelectedId(isOpen ? false : scheme.id)}
                   aria-expanded={isOpen}
                   className="flex w-full items-start gap-4 px-4 py-3.5 text-left transition-colors hover:bg-surface-muted"
                 >

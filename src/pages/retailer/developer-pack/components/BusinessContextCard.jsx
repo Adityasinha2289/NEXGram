@@ -1,5 +1,5 @@
 import { ListChecks, MapPin, Store, Wallet } from 'lucide-react';
-import { useAuth } from '../../../../context/AuthContext';
+import { useAuth } from '../../../../context/useAuth';
 
 /** "10000-25000" -> "₹10,000 – ₹25,000" */
 function formatBudget(raw) {

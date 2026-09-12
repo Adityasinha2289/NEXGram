@@ -11,6 +11,8 @@ import { SkeletonList } from '../../../components/ui/Skeleton';
 import { intelligenceApi } from '../../../services/api/intelligenceApi';
 import { useApiResource } from '../../../hooks/useApiResource';
 import { useDebounced } from '../../../hooks/useDebounced';
+import { useBasket } from '../../../context/useBasket';
+import { Check } from 'lucide-react';
 
 const rupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
@@ -23,6 +25,7 @@ const rupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
  */
 export function MarketSearch() {
   const navigate = useNavigate();
+  const { addItem, getQuantity } = useBasket();
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState(null);
 
@@ -159,41 +162,70 @@ export function MarketSearch() {
 
                 {isOpen && (
                   <ul className="divide-y divide-border border-t border-border bg-surface-muted">
-                    {item.offers.map((offer) => (
-                      <li key={offer.catalogueItemId}>
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/retailer/distributors/${offer.distributorId}`)}
-                          className="flex w-full items-center justify-between gap-3 py-3 pl-6 pr-4 text-left transition-colors hover:bg-surface-sunken"
-                        >
-                          <span className="min-w-0">
-                            <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
-                              <Store size={13} className="flex-shrink-0 text-text-muted" />
-                              <span className="truncate">{offer.distributorName}</span>
+                    {item.offers.map((offer) => {
+                      const basketQty = getQuantity(offer.distributorId, offer.catalogueItemId);
+                      
+                      return (
+                        <li key={offer.catalogueItemId}>
+                          <div className="flex w-full items-center justify-between gap-3 py-3 pl-6 pr-4 text-left transition-colors hover:bg-surface-sunken">
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
+                                <Store size={13} className="flex-shrink-0 text-text-muted" />
+                                <span className="truncate">{offer.distributorName}</span>
+                              </span>
+                              <span className="num mt-0.5 block text-2xs text-text-muted">
+                                {offer.variant} &middot; MOQ {offer.minimumOrderQuantity} &middot;{' '}
+                                {offer.availableStock} in stock
+                              </span>
+                              <span className="mt-0.5 flex flex-wrap items-center gap-x-3 text-2xs text-text-muted">
+                                {offer.sameArea && (
+                                  <span className="flex items-center gap-1">
+                                    <MapPin size={10} /> Aapke area mein
+                                  </span>
+                                )}
+                                {offer.deliveryTime && (
+                                  <span className="flex items-center gap-1">
+                                    <Truck size={10} /> {offer.deliveryTime}
+                                  </span>
+                                )}
+                              </span>
                             </span>
-                            <span className="num mt-0.5 block text-2xs text-text-muted">
-                              {offer.variant} &middot; MOQ {offer.minimumOrderQuantity} &middot;{' '}
-                              {offer.availableStock} in stock
-                            </span>
-                            <span className="mt-0.5 flex flex-wrap items-center gap-x-3 text-2xs text-text-muted">
-                              {offer.sameArea && (
-                                <span className="flex items-center gap-1">
-                                  <MapPin size={10} /> Aapke area mein
-                                </span>
-                              )}
-                              {offer.deliveryTime && (
-                                <span className="flex items-center gap-1">
-                                  <Truck size={10} /> {offer.deliveryTime}
-                                </span>
-                              )}
-                            </span>
-                          </span>
-                          <span className="num flex-shrink-0 text-sm font-semibold text-text-primary">
-                            {rupees(offer.price)}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
+                            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                              <span className="num text-sm font-semibold text-text-primary">
+                                {rupees(offer.price)}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={offer.availableStock < offer.minimumOrderQuantity}
+                                onClick={() => {
+                                  const productForBasket = {
+                                    id: offer.catalogueItemId,
+                                    name: item.name,
+                                    variant: offer.variant,
+                                    category: item.category,
+                                    price: offer.price,
+                                    minimumOrderQuantity: offer.minimumOrderQuantity,
+                                    availableStock: offer.availableStock,
+                                    stockStatus: offer.stockStatus || 'available',
+                                    deliveryTime: offer.deliveryTime
+                                  };
+                                  addItem(productForBasket, offer.distributorId, offer.distributorName);
+                                }}
+                                className={`btn btn-sm ${basketQty > 0 ? 'bg-success/10 text-success hover:bg-success/20' : 'btn-primary'}`}
+                              >
+                                {basketQty > 0 ? (
+                                  <span className="flex items-center gap-1.5">
+                                    <Check size={14} /> {basketQty} added
+                                  </span>
+                                ) : (
+                                  'Add'
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </li>

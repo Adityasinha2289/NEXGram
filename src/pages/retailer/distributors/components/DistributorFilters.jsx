@@ -9,7 +9,7 @@ import { Input } from '../../../../components/ui/Input';
  * function, so choosing it silently did nothing; "Most pack products" was
  * implemented but never offered.
  */
-export const SORTS = [
+const SORTS = [
   { value: 'Recommended', label: 'Recommended' },
   { value: 'Most Pack Products', label: 'Pack ke sabse zyada products' },
   { value: 'Nearest', label: 'Sabse paas' },

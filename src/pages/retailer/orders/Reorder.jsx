@@ -9,11 +9,14 @@ import { PageHeader } from '../../../components/ui/PageHeader';
 import { SkeletonList } from '../../../components/ui/Skeleton';
 import { intelligenceApi } from '../../../services/api/intelligenceApi';
 import { useApiResource } from '../../../hooks/useApiResource';
+import { useBasket } from '../../../context/useBasket';
+import { Check } from 'lucide-react';
 
 const rupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
 export function Reorder() {
   const navigate = useNavigate();
+  const { addItem, getQuantity } = useBasket();
 
   // Reorder candidates come from this shop's real order history, with the
   // cadence measured from the gaps between their own past purchases.
@@ -55,40 +58,68 @@ export function Reorder() {
           )}
 
           <List>
-            {items.map((item, index) => (
-              <ListRow
-                key={`${item.id}-${index}`}
-                onClick={() => navigate(`/retailer/distributors/${item.distributorId}`)}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold text-text-primary">
-                      {item.name}
-                      {item.variant && (
-                        <span className="ml-1.5 font-normal text-text-muted">{item.variant}</span>
-                      )}
-                    </h3>
-                    {item.dueNow && <Badge variant="warning" dot>Ab due hai</Badge>}
+            {items.map((item, index) => {
+              const basketQty = getQuantity(item.distributorId, item.catalogueItemId);
+              
+              return (
+                <div key={`${item.id}-${index}`} className="flex items-center gap-4 px-4 py-3 border-b border-border hover:bg-surface-muted transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold text-text-primary">
+                        {item.name}
+                        {item.variant && (
+                          <span className="ml-1.5 font-normal text-text-muted">{item.variant}</span>
+                        )}
+                      </h3>
+                      {item.dueNow && <Badge variant="warning" dot>Ab due hai</Badge>}
+                    </div>
+                    <p className="mt-0.5 truncate text-2xs text-text-muted">{item.distributorName}</p>
+                    <p className="mt-1 flex items-center gap-1 text-2xs text-text-muted">
+                      <Clock size={11} /> {item.suggestion}
+                    </p>
                   </div>
-                  <p className="mt-0.5 truncate text-2xs text-text-muted">{item.distributorName}</p>
-                  <p className="mt-1 flex items-center gap-1 text-2xs text-text-muted">
-                    <Clock size={11} /> {item.suggestion}
-                  </p>
-                </div>
 
-                <span className="flex-shrink-0 text-right">
-                  <span className="num block text-sm font-semibold text-text-primary">
-                    {rupees(item.price)}
-                  </span>
-                  {/* Per pack, not per gram: `unit` is the variant's unit, so
-                      "/ g" priced a 200g pack as if it were a gram. */}
-                  <span className="block text-2xs text-text-muted">
-                    / {item.variant || item.unit}
-                  </span>
-                </span>
-                <RowChevron />
-              </ListRow>
-            ))}
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <span className="text-right">
+                      <span className="num block text-sm font-semibold text-text-primary">
+                        {rupees(item.price)}
+                      </span>
+                      <span className="block text-2xs text-text-muted">
+                        / {item.variant || item.unit}
+                      </span>
+                    </span>
+                    
+                    <button
+                      type="button"
+                      disabled={item.availableStock < item.minimumOrderQuantity}
+                      onClick={() => {
+                        const productForBasket = {
+                          id: item.catalogueItemId,
+                          name: item.name,
+                          variant: item.variant || item.unit,
+                          category: 'Uncategorised',
+                          price: item.price,
+                          minimumOrderQuantity: item.minimumOrderQuantity || 1,
+                          availableStock: item.availableStock || 999,
+                          stockStatus: item.stockStatus || 'available',
+                          deliveryTime: item.deliveryTime
+                        };
+                        addItem(productForBasket, item.distributorId, item.distributorName);
+                      }}
+                      className={`btn btn-sm ${basketQty > 0 ? 'bg-success/10 text-success hover:bg-success/20' : 'btn-primary'}`}
+                    >
+                      {basketQty > 0 ? (
+                        <span className="flex items-center gap-1.5">
+                          <Check size={14} /> {basketQty} added
+                        </span>
+                      ) : (
+                        'Add'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </List>
         </>
       )}

@@ -256,18 +256,21 @@ class OpportunityEngine:
                             "points": demand_score,
                             "max": OpportunityEngine.DEMAND_WEIGHT,
                             "detail": f"{retailers} of a saturating {int(OpportunityEngine.DEMAND_SATURATION)} retailers",
+                            "source_type": "OBSERVED"
                         },
                         {
                             "label": "Supply scarcity",
                             "points": scarcity_score,
                             "max": OpportunityEngine.SCARCITY_WEIGHT,
                             "detail": f"{fulfillable} distributor{'' if fulfillable == 1 else 's'} can fulfil today",
+                            "source_type": "OBSERVED"
                         },
                         {
                             "label": "Your fit",
                             "points": fit_score,
                             "max": OpportunityEngine.FIT_WEIGHT,
                             "detail": "Your primary area" if location_level == 'area' else "Within your district",
+                            "source_type": "MODEL_INFERENCE"
                         },
                     ],
                     "total": opportunity_score,

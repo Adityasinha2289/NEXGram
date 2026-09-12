@@ -11,7 +11,7 @@ import { Section } from '../../../components/ui/Section';
 import { SkeletonList } from '../../../components/ui/Skeleton';
 import { distributorsApi } from '../../../services/api/distributorsApi';
 import { useApiResource } from '../../../hooks/useApiResource';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../context/useAuth';
 import { useDeveloperPack } from '../developer-pack/hooks/useDeveloperPack';
 
 export function DistributorDiscovery() {

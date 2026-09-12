@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ShoppingCart, Store } from 'lucide-react';
 import { Button } from '../../../../components/ui/Button';
 import { Card } from '../../../../components/ui/Card';
-import { ordersApi } from '../../../../services/api/ordersApi';
+import { useBasket } from '../../../../context/useBasket';
 
 const formatRupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
@@ -38,28 +38,34 @@ export function PackOrderAction({ packItems, onOrdered }) {
     return [...bySupplier.values()];
   }, [packItems]);
 
-  const placeOrders = async () => {
+  const { addItem } = useBasket();
+
+  const placeOrders = () => {
     setIsPlacing(true);
     setError(null);
     try {
-      const created = [];
       for (const group of groups) {
-        const order = await ordersApi.createOrder({
-          distributor_id: group.distributorId,
-          items: group.items.map((item) => ({
-            catalogue_item_id: item.id,
-            quantity: item.suggestedQuantity || item.minimumOrderQuantity || 1,
-          })),
-          notes: 'Developer Pack se order',
+        group.items.forEach(item => {
+          const productForBasket = {
+            id: item.id, // Catalogue item ID
+            name: item.name,
+            variant: item.variant || item.unit,
+            category: item.category || 'Uncategorised',
+            price: item.price,
+            minimumOrderQuantity: item.minimumOrderQuantity || 1,
+            availableStock: item.availableStock || 999, // default if not provided
+            stockStatus: item.availability || 'available',
+            deliveryTime: item.deliveryTime
+          };
+          
+          addItem(productForBasket, group.distributorId, group.distributorName);
         });
-        created.push(order);
       }
 
       onOrdered?.();
-      // Several orders: send them to the list. One: straight to it.
-      navigate(created.length === 1 ? `/retailer/orders/${created[0].id}` : '/retailer/orders');
+      navigate('/retailer/procurement');
     } catch (err) {
-      setError(err.message || 'Order place nahi hua. Dobara try karein.');
+      setError(err.message || 'Basket mein add nahi hua. Dobara try karein.');
     } finally {
       setIsPlacing(false);
     }
@@ -70,11 +76,11 @@ export function PackOrderAction({ packItems, onOrdered }) {
   return (
     <Card elevated clip>
       <div className="border-b border-border bg-primary-subtle px-4 py-3">
-        <h3 className="text-sm font-semibold text-text-primary">Order bhejein</h3>
+        <h3 className="text-sm font-semibold text-text-primary">Basket mein daalein</h3>
         <p className="mt-0.5 text-2xs leading-snug text-text-muted">
           {groups.length === 1
             ? 'Yeh pack ek hi supplier se aa raha hai.'
-            : `Yeh pack ${groups.length} suppliers se aa raha hai, isliye ${groups.length} alag orders banenge.`}
+            : `Yeh pack ${groups.length} suppliers se aa raha hai.`}
         </p>
       </div>
 
@@ -108,7 +114,7 @@ export function PackOrderAction({ packItems, onOrdered }) {
           </p>
         )}
         <Button fullWidth icon={ShoppingCart} isLoading={isPlacing} onClick={placeOrders}>
-          {groups.length === 1 ? 'Order bhejein' : `${groups.length} orders bhejein`}
+          Basket mein daalein
         </Button>
       </div>
     </Card>

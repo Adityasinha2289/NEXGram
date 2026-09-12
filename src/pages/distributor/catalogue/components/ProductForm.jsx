@@ -28,33 +28,22 @@ export function ProductForm({ initialData = null, prefill = null, onSubmit, onCa
       : null,
   );
 
-  const [formData, setFormData] = useState({
-    price: '',
-    minimumOrderQuantity: '',
-    availableStock: prefill?.availableStock ? String(prefill.availableStock) : '',
-    deliveryTime: APP_CONSTANTS.DELIVERY_OPTIONS[0],
-  });
+  const [formData, setFormData] = useState(() => ({
+    price: initialData?.price ?? '',
+    minimumOrderQuantity: initialData?.minimumOrderQuantity ?? '',
+    availableStock: initialData?.availableStock ?? (prefill?.availableStock ? String(prefill.availableStock) : ''),
+    deliveryTime: initialData?.deliveryTime || APP_CONSTANTS.DELIVERY_OPTIONS[0],
+  }));
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        price: initialData.price ?? '',
-        minimumOrderQuantity: initialData.minimumOrderQuantity ?? '',
-        availableStock: initialData.availableStock ?? '',
-        deliveryTime: initialData.deliveryTime || APP_CONSTANTS.DELIVERY_OPTIONS[0],
-      });
-    }
-  }, [initialData]);
 
   // Editing an existing listing keeps its product; only new ones search.
   useEffect(() => {
     if (isEditing || selection) return;
     let cancelled = false;
-    setIsSearching(true);
     const timer = setTimeout(() => {
+      setIsSearching(true);
       productsApi.getProducts({ search: query || undefined, page_size: 30 })
         .then((res) => { if (!cancelled) setProducts(res.items || []); })
         .catch(() => { if (!cancelled) setProducts([]); })

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { distributorsApi } from '../../../../services/api/distributorsApi';
 import { intelligenceApi } from '../../../../services/api/intelligenceApi';
-import { useAuth } from '../../../../context/AuthContext';
+import { useAuth } from '../../../../context/useAuth';
 
 export function useCatalogue() {
   const { currentUser } = useAuth();
@@ -18,28 +18,21 @@ export function useCatalogue() {
     setIsLoading(true);
     setError(null);
     try {
-      // In a real app we would pass pagination params, but for now we fetch a page
       const response = await distributorsApi.getDistributorCatalogue(distributorId, {
         search: searchQuery || undefined,
-        // Category filtering might need backend support if we want to filter by category ID, 
-        // but for now we'll fetch and filter if selectedCategory is set and backend doesn't support it directly,
-        // or just rely on search. The API doesn't have category filter for catalogue yet.
         page_size: 100
       });
       
-      // If we have a selected category, filter client side for now since backend API doesn't support category_id filtering yet.
-      // Alternatively we can add category_id to the API. Let's filter client side for simplicity in this phase.
-      let fetchedItems = response.items;
+      let fetchedItems = response.items || [];
       if (selectedCategory !== 'All') {
         fetchedItems = fetchedItems.filter(item => item.category_slug === selectedCategory.toLowerCase());
       }
       
-      // Map API schema to UI expectations
       const mappedProducts = fetchedItems.map(item => ({
         id: item.id,
         name: `${item.product_name} (${item.variant_name})`,
         category: item.category_slug ? item.category_slug.charAt(0).toUpperCase() + item.category_slug.slice(1) : 'Uncategorized',
-        unit: 'unit', // backend doesn't return unit directly in the flattened schema, we could join it, but mocking for now
+        unit: 'unit',
         price: item.selling_price,
         minimumOrderQuantity: item.minimum_order_quantity,
         availableStock: item.available_stock,
@@ -58,12 +51,49 @@ export function useCatalogue() {
   }, [distributorId, searchQuery, selectedCategory]);
 
   useEffect(() => {
-    fetchCatalogue();
-  }, [fetchCatalogue]);
+    let cancelled = false;
+    async function load() {
+      try {
+        const response = await distributorsApi.getDistributorCatalogue(distributorId, {
+          search: searchQuery || undefined,
+          page_size: 100
+        });
+        if (cancelled) return;
+        let fetchedItems = response.items || [];
+        if (selectedCategory !== 'All') {
+          fetchedItems = fetchedItems.filter(item => item.category_slug === selectedCategory.toLowerCase());
+        }
+        const mappedProducts = fetchedItems.map(item => ({
+          id: item.id,
+          name: `${item.product_name} (${item.variant_name})`,
+          category: item.category_slug ? item.category_slug.charAt(0).toUpperCase() + item.category_slug.slice(1) : 'Uncategorized',
+          unit: 'unit',
+          price: item.selling_price,
+          minimumOrderQuantity: item.minimum_order_quantity,
+          availableStock: item.available_stock,
+          stockStatus: item.stock_status,
+          deliveryTime: item.delivery_time || 'N/A'
+        }));
+        setProducts(mappedProducts);
+        setTotalCount(response.total);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || 'Failed to load catalogue');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [distributorId, searchQuery, selectedCategory]);
 
   // Derived state
   const categories = useMemo(() => {
-    // Ideally categories come from the backend, but we derive from current fetched for now to match UI behavior
     const cats = new Set(products.map(p => p.category));
     return ['All', ...Array.from(cats)].sort();
   }, [products]);

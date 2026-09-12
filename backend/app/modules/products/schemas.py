@@ -24,3 +24,23 @@ class ProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class SupplierOfferSchema(BaseModel):
+    id: str
+    distributor_id: str
+    distributor_name: str
+    distributor_location: Optional[str]
+    variant_id: str
+    variant_name: str
+    pack_size: Optional[str]
+    price: float
+    moq: int
+    stock: int
+    stock_status: str
+    delivery_time: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+class ProductWithSuppliersResponse(ProductResponse):
+    offers: List[SupplierOfferSchema] = []

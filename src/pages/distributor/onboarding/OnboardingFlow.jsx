@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../context/useAuth';
 import { intelligenceApi } from '../../../services/api/intelligenceApi';
 import { profilesApi } from '../../../services/api/profilesApi';
 import { OnboardingShell } from '../../../components/ui/OnboardingShell';
@@ -44,15 +44,14 @@ export function OnboardingFlow() {
 
   useEffect(() => {
     if (profile?.profile_data) {
-      // name and mobile sit on the profile response itself, not inside
-      // profile_data, so spreading profile_data alone left step one blank for
-      // a user whose name the server already knew.
-      setData(prev => ({
-        ...prev,
-        ...profile.profile_data,
-        name: profile.profile_data.name || profile.name || prev.name,
-        mobile: profile.profile_data.mobile || profile.mobile || prev.mobile,
-      }));
+      queueMicrotask(() => {
+        setData(prev => ({
+          ...prev,
+          ...profile.profile_data,
+          name: profile.profile_data.name || profile.name || prev.name,
+          mobile: profile.profile_data.mobile || profile.mobile || prev.mobile,
+        }));
+      });
     }
   }, [profile]);
 

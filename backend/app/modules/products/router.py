@@ -33,3 +33,10 @@ def read_product(product_id: str, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
+@router.get("/{product_id}/suppliers", response_model=schemas.ProductWithSuppliersResponse)
+def read_product_with_suppliers(product_id: str, db: Session = Depends(get_db)):
+    product_data = service.get_product_with_suppliers(db, product_id)
+    if not product_data:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product_data

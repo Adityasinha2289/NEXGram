@@ -21,3 +21,49 @@ def get_products(db: Session, skip: int = 0, limit: int = 20, search: Optional[s
 
 def get_product(db: Session, product_id: str) -> Optional[Product]:
     return db.query(Product).options(joinedload(Product.category), joinedload(Product.variants)).filter(Product.id == product_id, Product.is_active == True).first()
+
+def get_product_with_suppliers(db: Session, product_id: str):
+    from app.models.catalogue import DistributorCatalogueItem
+    from app.models.profiles import DistributorProfile
+    
+    product = get_product(db, product_id)
+    if not product:
+        return None
+        
+    # Get all active catalogue items for this product
+    items = db.query(DistributorCatalogueItem).options(
+        joinedload(DistributorCatalogueItem.distributor).joinedload(DistributorProfile.location),
+        joinedload(DistributorCatalogueItem.variant)
+    ).filter(
+        DistributorCatalogueItem.product_id == product_id,
+        DistributorCatalogueItem.is_active == True,
+        DistributorCatalogueItem.is_available == True
+    ).all()
+    
+    offers = []
+    for item in items:
+        # Extract location info safely
+        loc = item.distributor.location
+        loc_str = f"{loc.village_name}, {loc.block}" if loc else None
+        
+        offers.append({
+            "id": item.id,
+            "distributor_id": item.distributor_id,
+            "distributor_name": item.distributor.business_name,
+            "distributor_location": loc_str,
+            "variant_id": item.product_variant_id,
+            "variant_name": item.variant.variant_name,
+            "pack_size": item.variant.pack_size,
+            "price": item.selling_price,
+            "moq": item.minimum_order_quantity,
+            "stock": item.available_stock,
+            "stock_status": item.stock_status,
+            "delivery_time": item.delivery_time
+        })
+        
+    return {
+        **product.__dict__,
+        "category": product.category,
+        "variants": product.variants,
+        "offers": offers
+    }
