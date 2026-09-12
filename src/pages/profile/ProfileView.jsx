@@ -51,7 +51,7 @@ function Facts({ rows }) {
       {rows.map(({ label, value }) => (
         <div key={label} className="flex flex-col gap-0.5 py-3 sm:flex-row sm:items-baseline sm:gap-6">
           <dt className="text-sm text-text-muted sm:w-48 sm:flex-shrink-0">{label}</dt>
-          <dd className={`text-sm ${value === NOT_SET ? 'text-text-faint' : 'font-medium text-text-primary'}`}>
+          <dd className={`text-sm ${value === NOT_SET ? 'text-text-muted' : 'font-medium text-text-primary'}`}>
             {value || NOT_SET}
           </dd>
         </div>
@@ -62,7 +62,7 @@ function Facts({ rows }) {
 
 function Chips({ values, empty }) {
   if (values.length === 0) {
-    return <p className="text-sm text-text-faint">{empty}</p>;
+    return <p className="text-sm text-text-muted">{empty}</p>;
   }
   return (
     <ul className="flex flex-wrap gap-1.5">

@@ -56,7 +56,7 @@
   }
 
   .input::placeholder {
-    color: var(--color-text-faint);
+    color: var(--color-text-muted);
   }
 
   .input:hover:not(:disabled):not(:focus) {

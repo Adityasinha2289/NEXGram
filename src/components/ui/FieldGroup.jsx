@@ -91,7 +91,7 @@ export function Field({ field, value, onChange, error }) {
         <textarea
           id={key}
           rows={3}
-          className="w-full resize-y rounded-md border border-border-strong bg-surface px-3 py-2.5 leading-relaxed text-text-primary transition-colors placeholder:text-text-faint hover:border-text-faint focus:border-primary focus:outline-none"
+          className="w-full resize-y rounded-md border border-border-strong bg-surface px-3 py-2.5 leading-relaxed text-text-primary transition-colors placeholder:text-text-muted hover:border-text-faint focus:border-primary focus:outline-none"
           placeholder={placeholder}
           value={value ?? ''}
           onChange={(e) => onChange(key, e.target.value)}

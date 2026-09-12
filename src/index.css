@@ -20,9 +20,10 @@
   --color-primary-subtle: #f3f8f0;
 
   /* Warm terracotta for the secondary action, borrowed from the setting rather
-     than a generic orange. */
-  --color-secondary: #c2612c;
-  --color-secondary-hover: #a44f22;
+     than a generic orange. Darkened from #c2612c, which put white 14px text on
+     it at 4.17:1 - under AA for anything that is not large type. */
+  --color-secondary: #b35726;
+  --color-secondary-hover: #9c4a1f;
   --color-secondary-light: #fbeee4;
   --color-secondary-subtle: #fdf7f2;
 
@@ -38,7 +39,13 @@
   --color-text-primary: #141810;
   --color-text-secondary: #3d443a;
   --color-text-muted: #6a7265;
-  --color-text-faint: #939b8e;
+  /*
+   * Non-text only: chevrons, rules, the quiet half of a disabled control. At
+   * 3.8:1 it clears the 3:1 that a meaningful icon needs and does not clear the
+   * 4.5:1 that body text does, and no grey light enough to read as a third tier
+   * ever would. Anything a user has to read takes --color-text-muted.
+   */
+  --color-text-faint: #7e8679;
   --color-text-inverse: #ffffff;
 
   /* Semantic colours, kept separate from the brand accent so "good" never
