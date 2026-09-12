@@ -49,7 +49,6 @@
   --color-success-bg: #e4f3ea;
   --color-warning: #8a5a00;
   --color-warning-bg: #fbf1d6;
-  --color-warning-light: #fbf1d6;
   --color-info: #0b6b8a;
   --color-info-bg: #e3f2f7;
 
@@ -71,15 +70,9 @@
   --text-display-lg--letter-spacing: -0.028em;
 
   --animate-fade-in: fade-in 0.25s ease-out;
-  --animate-rise: rise 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: none; }
-  }
-
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: none; }
   }
 }
@@ -88,7 +81,6 @@
   /* Aliases for names the *.module.css files reference. */
   --color-error: var(--color-danger);
   --color-error-bg: var(--color-danger-bg);
-  --color-text-main: var(--color-text-primary);
 
   /*
    * One variable family rather than a display/body pair: the target user is on
@@ -103,16 +95,11 @@
   --font-size-md: 1rem;
   --font-size-base: 1rem;
   --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
 
   /* Spacing, on a 4px grid. The numeric aliases exist because several module
      stylesheets were written against a scale that was never declared. */
   --spacing-1: 0.25rem;
-  --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
-  --spacing-4: 1rem;
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
@@ -125,7 +112,6 @@
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
   --radius-full: 9999px;
 
   /* Elevation, tinted with the neutral hue rather than pure black, and kept
@@ -143,16 +129,17 @@
   --sidebar-width: 232px;
 
   /* Layout constraints */
-  --max-width-mobile: 480px;
-  --max-width-tablet: 768px;
-  --max-width-desktop: 1024px;
   --max-width-wide: 1240px;
 
-  /* Z-index layers */
-  --z-base: 1;
-  --z-nav: 50;
+  /*
+   * Stacking order, in one place because four fixed elements have to agree on
+   * it. These used to be declared and then ignored: every component picked its
+   * own number, and the sidebar ended up under the header it has to sit beside.
+   */
+  --z-nav: 50;      /* the phone's bottom bar */
+  --z-header: 60;   /* the top bar, over the page but under the sidebar */
+  --z-sidebar: 70;  /* owns the top-left corner on desktop */
   --z-modal: 100;
-  --z-toast: 200;
 }
 
 /*

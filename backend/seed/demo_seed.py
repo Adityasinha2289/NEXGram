@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 
 from app.core.database import Base, SessionLocal
 from app.core.security import get_password_hash
+from app.modules.intelligence.services.pipeline import run_pipeline
 from app.models import (
     Category,
     DistributorCatalogueItem,
@@ -618,12 +619,23 @@ def run_seed(reset: bool = False):
         retailers = build_retailers(db)
         orders = build_order_history(db, retailers, distributors)
 
+        # Demand signals, supply gaps and opportunities are derived, not seeded.
+        # Without this the database looks complete and every screen that reads
+        # the intelligence layer - both dashboards, the opportunity list, the
+        # market search - comes up empty until someone thinks to POST
+        # /intelligence/refresh, which is not in any instructions.
+        print("Computing the intelligence pipeline...")
+        pipeline = run_pipeline(db)
+
         print(f"  locations    {len(LOCATIONS)}")
         print(f"  categories   {len(CATEGORIES)}")
         print(f"  products     {len(PRODUCTS)}  ({len(variants)} variants)")
         print(f"  distributors {len(DISTRIBUTORS)}")
         print(f"  retailers    {len(RETAILERS)}")
         print(f"  orders       {orders}")
+        print(f"  signals      {pipeline['demand']['signals_generated']}")
+        print(f"  supply gaps  {pipeline['supply_gaps']['gaps_generated']}")
+        print(f"  opportunities{pipeline['opportunities'].get('opportunities_generated', '?'):>4}")
         print(f"\nAll demo accounts use password: {DEMO_PASSWORD}")
         print("  retailer   9000000001   (Gupta Kirana Store, Palampur)")
         print("  distributor 9100000002  (Himachal Dairy Co, Palampur)")

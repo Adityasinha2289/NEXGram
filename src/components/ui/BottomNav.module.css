@@ -22,7 +22,7 @@
     -webkit-backdrop-filter: saturate(1.6) blur(12px);
     border-top: 1px solid var(--color-border);
     display: flex;
-    z-index: 50;
+    z-index: var(--z-nav);
   }
 
   /* Sidebar-only furniture. */
@@ -108,7 +108,7 @@
       border-right: 1px solid var(--color-border);
       /* Above the header, because the sidebar owns the top-left corner where the
          two would otherwise overlap. */
-      z-index: 70;
+      z-index: var(--z-sidebar);
       overflow-y: auto;
     }
 

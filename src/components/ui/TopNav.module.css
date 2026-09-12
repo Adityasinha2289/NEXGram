@@ -26,7 +26,7 @@
     color: var(--color-text-primary);
     display: flex;
     align-items: center;
-    z-index: 60;
+    z-index: var(--z-header);
   }
 
   .inner {

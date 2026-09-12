@@ -115,7 +115,7 @@ same tables with no schema change.
 | Frontend | React 19, Vite 8, Tailwind v4, PWA |
 | Backend | FastAPI, SQLAlchemy 2.0, Alembic |
 | Database | PostgreSQL (SQLite for development) |
-| Tests | **101 backend + 43 frontend** |
+| Tests | **102 backend + 49 frontend** |
 | CI | tests, lint, build, image builds, migration-drift check |
 
 The migration-drift check is worth calling out: it fails the build if the models

@@ -20,6 +20,7 @@ pip install -r requirements.txt
 cp .env.example .env
 alembic upgrade head
 python -m seed.demo_seed          # 3 villages, 25 retailers, 8 distributors
+                                  # add --reset to wipe and rebuild
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Frontend, in another terminal
@@ -39,9 +40,16 @@ Demo accounts (all password `demo1234`):
 | Retailer | `9000000022` | Thural Kirana — deliberately cold-start |
 | Distributor | `9100000002` | Himachal Dairy Co, Palampur |
 
-## Seeding the intelligence layer
+## The intelligence layer
 
-The engines compute nothing until there is demand to compute on:
+Demand signals, supply gaps and opportunities are *derived*, not stored by the
+seed. `demo_seed` runs the pipeline as its last step, so a fresh database is
+ready to demo — without that, every screen that reads the intelligence layer
+comes up empty on a database that otherwise looks complete.
+
+In the app, the same three engines run as one authenticated call to
+`POST /api/intelligence/refresh`, triggered whenever a retailer reports demand
+or a distributor changes stock. To drive the stages individually:
 
 ```bash
 curl -X POST localhost:8000/api/intelligence/demand/generate       -H "X-Ops-Token: dev-ops-token"
@@ -49,14 +57,14 @@ curl -X POST localhost:8000/api/intelligence/supply-gaps/generate  -H "X-Ops-Tok
 curl -X POST localhost:8000/api/intelligence/opportunities/generate -H "X-Ops-Token: dev-ops-token"
 ```
 
-Order matters — each stage consumes the previous one's persisted output. In the
-app this runs as one authenticated call to `POST /api/intelligence/refresh`,
-triggered whenever a retailer reports demand or a distributor changes stock.
+Order matters — each stage consumes the previous one's persisted output. All
+three upsert on deterministic ids, so repeat calls are idempotent.
 
 ## Tests
 
 ```bash
-cd backend && pytest -q      # 86 tests
+cd backend && pytest -q      # 102 tests
+npm test -- --run            # 49 tests
 npm run lint                 # oxlint, must be 0 errors
 npm run build
 ```

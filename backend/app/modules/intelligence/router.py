@@ -12,6 +12,7 @@ from app.modules.intelligence.services.opportunity_engine import OpportunityEngi
 from app.modules.intelligence.services import dashboard as dashboard_service
 from app.modules.intelligence.services import alerts as alerts_service
 from app.modules.intelligence.services import demand_report
+from app.modules.intelligence.services.pipeline import run_pipeline
 from app.api.deps import get_current_distributor, get_current_retailer, get_current_user
 from app.models.users import User
 from app.models.profiles import DistributorProfile, RetailerProfile
@@ -28,18 +29,6 @@ def require_ops_token(x_ops_token: Optional[str] = Header(default=None)):
     """
     if x_ops_token != settings.OPS_TOKEN:
         raise HTTPException(status_code=403, detail="Invalid or missing ops token")
-
-
-def run_pipeline(db: Session) -> dict:
-    """Runs the three engines in dependency order.
-
-    Each stage consumes the previous stage's persisted output, so the order is
-    fixed: demand signals feed supply gaps, which feed opportunities.
-    """
-    demand = DemandEngine.generate_demand(db)
-    gaps = SupplyGapEngine.generate_supply_gaps(db)
-    opportunities = OpportunityEngine.generate_opportunities(db)
-    return {"demand": demand, "supply_gaps": gaps, "opportunities": opportunities}
 
 
 @router.post("/demand/generate", summary="Generate Demand Signals", dependencies=[Depends(require_ops_token)])
