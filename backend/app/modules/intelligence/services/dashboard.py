@@ -10,7 +10,7 @@ Nothing here computes intelligence. Scores come from the engines; this only
 shapes what they already persisted into what the screens display.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from math import asin, cos, radians, sin, sqrt
 from typing import Optional
 
@@ -442,7 +442,7 @@ def build_reorder_list(db: Session, retailer: RetailerProfile) -> list:
     for row in rows:
         history.setdefault(row.product_id, []).append(row)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     items = []
     for product_id, entries in history.items():
         product = db.query(Product).filter(Product.id == product_id).first()
@@ -689,7 +689,7 @@ def build_retailer_dashboard(db: Session, retailer: RetailerProfile) -> dict:
         .group_by(Product.id, Product.canonical_name) \
         .order_by(func.max(Order.created_at).desc()).limit(4).all()
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     reorder_items = []
     for row in recent_rows:
         last = row.last_ordered

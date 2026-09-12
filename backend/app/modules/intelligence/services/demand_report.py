@@ -20,7 +20,7 @@ Shape written to RetailerProfile.unmet_needs:
 structured `reports` list is what the UI renders back to the shopkeeper.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session
@@ -80,7 +80,7 @@ def add_report(
         "productId": product.id if product else None,
         "category": category_name or None,
         "note": note.strip(),
-        "reportedAt": datetime.utcnow().isoformat(),
+        "reportedAt": datetime.now(timezone.utc).isoformat(),
     }
     payload["reports"] = (payload["reports"] + [entry])[-MAX_REPORTS:]
 

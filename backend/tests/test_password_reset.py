@@ -5,7 +5,7 @@ itself, so these cover the leak paths as well as the happy one: account
 enumeration, replay, expiry, and codes crossing between accounts.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -102,7 +102,7 @@ def test_a_wrong_code_is_rejected(db, user, monkeypatch):
 def test_an_expired_code_is_rejected(db, user, monkeypatch):
     code = issue_code(db, monkeypatch)
     token = db.query(PasswordResetToken).one()
-    token.expires_at = datetime.utcnow() - timedelta(minutes=1)
+    token.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)
     db.commit()
 
     ok, error = password_reset.confirm_reset(db, "9000000001", code, "brandnew123")

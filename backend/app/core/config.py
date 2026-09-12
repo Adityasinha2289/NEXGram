@@ -20,7 +20,8 @@ class Settings(BaseSettings):
     # 5173 is `npm run dev`; 4173 is `npm run preview` (the production build).
     ALLOWED_ORIGINS: str = (
         "http://localhost:5173,http://127.0.0.1:5173,"
-        "http://localhost:4173,http://127.0.0.1:4173"
+        "http://localhost:4173,http://127.0.0.1:4173,"
+        "http://localhost:3000,http://127.0.0.1:3000"
     )
 
     # Signs access tokens. Regenerated per process in development so a leaked

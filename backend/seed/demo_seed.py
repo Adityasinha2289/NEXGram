@@ -19,7 +19,7 @@ Run with:  python -m seed.demo_seed
 """
 
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.core.database import Base, SessionLocal
 from app.core.security import get_password_hash
@@ -493,7 +493,7 @@ def build_order_history(db, retailers, distributors):
     for spec in DISTRIBUTORS:
         by_location.setdefault(spec["location"], []).append(spec)
 
-    today = datetime.utcnow()
+    today = datetime.now(timezone.utc)
     order_seq = 0
     relationships = set()
 

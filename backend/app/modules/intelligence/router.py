@@ -245,6 +245,16 @@ def get_demand(
 ):
     query = db.query(DemandSignal)
 
+    if current_user.role == "retailer":
+        profile = db.query(RetailerProfile).filter(RetailerProfile.user_id == current_user.id).first()
+        if not profile:
+            raise HTTPException(status_code=403, detail="Retailer profile not found")
+        query = query.filter(DemandSignal.retailer_id == profile.id)
+    elif current_user.role == "distributor":
+        raise HTTPException(status_code=403, detail="Distributors must use /opportunities or /supply-gaps")
+    elif current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     if product_id:
         query = query.filter(DemandSignal.product_id == product_id)
     if category_id:
@@ -273,6 +283,9 @@ def get_supply_gaps(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if current_user.role != "distributor" and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only distributors can view supply gaps")
+
     query = db.query(SupplyGap)
 
     if product_id:

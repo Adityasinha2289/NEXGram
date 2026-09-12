@@ -1,0 +1,169 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  /* Strict Palette Tokens */
+  --color-brand-deep: #0F2A1D;
+  --color-brand-forest: #375534;
+  --color-brand-sage: #6B9071;
+  --color-brand-soft: #AEC3B0;
+  --color-brand-cream: #E3EED4;
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-heading);
+  
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  /* LIGHT MODE - Pale Cream background, Deep Forest text */
+  --background: #F4F7F0; /* Slightly lighter than Pale Cream for contrast */
+  --foreground: #0F2A1D;
+  
+  --card: #FFFFFF;
+  --card-foreground: #0F2A1D;
+  
+  --popover: #FFFFFF;
+  --popover-foreground: #0F2A1D;
+  
+  /* Primary: Deep Forest */
+  --primary: #0F2A1D;
+  --primary-foreground: #FFFFFF;
+  
+  /* Secondary: Sage */
+  --secondary: #E3EED4;
+  --secondary-foreground: #0F2A1D;
+  
+  /* Muted / Soft elements */
+  --muted: #E3EED4;
+  --muted-foreground: #6B9071;
+  
+  --accent: #E3EED4;
+  --accent-foreground: #0F2A1D;
+  
+  --destructive: #9B2C2C; /* Reserved semantic color, kept muted */
+  
+  /* Subtle borders and rings */
+  --border: #AEC3B0;
+  --input: #AEC3B0;
+  --ring: #375534;
+  
+  --radius: 0.5rem; /* Reduced for a more minimal, sharp editorial feel */
+  
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0F2A1D;
+  --sidebar-primary: #0F2A1D;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #E3EED4;
+  --sidebar-accent-foreground: #0F2A1D;
+  --sidebar-border: #AEC3B0;
+  --sidebar-ring: #375534;
+}
+
+.dark {
+  /* DARK MODE - Deep Forest background, Pale Cream text */
+  --background: #0B1E15; /* Even deeper than Deep Forest for depth */
+  --foreground: #E3EED4;
+  
+  --card: #0F2A1D;
+  --card-foreground: #E3EED4;
+  
+  --popover: #0F2A1D;
+  --popover-foreground: #E3EED4;
+  
+  /* Primary: Soft Sage (Readable on dark) */
+  --primary: #AEC3B0;
+  --primary-foreground: #0F2A1D;
+  
+  /* Secondary: Forest */
+  --secondary: #375534;
+  --secondary-foreground: #E3EED4;
+  
+  --muted: #153A28; /* Between Deep Forest and Forest */
+  --muted-foreground: #AEC3B0;
+  
+  --accent: #153A28;
+  --accent-foreground: #E3EED4;
+  
+  --destructive: #F56565;
+  
+  --border: #375534;
+  --input: #375534;
+  --ring: #6B9071;
+  
+  --sidebar: #0F2A1D;
+  --sidebar-foreground: #E3EED4;
+  --sidebar-primary: #AEC3B0;
+  --sidebar-primary-foreground: #0F2A1D;
+  --sidebar-accent: #153A28;
+  --sidebar-accent-foreground: #E3EED4;
+  --sidebar-border: #375534;
+  --sidebar-ring: #6B9071;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground tracking-tight;
+  }
+  html {
+    @apply font-sans;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight font-medium;
+  }
+  
+  /* Clean scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
