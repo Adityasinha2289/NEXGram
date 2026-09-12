@@ -39,7 +39,7 @@ export function Profile() {
       {/* Business Info */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-base text-text-primary mb-3 flex items-center gap-2">
             <Store size={18} className="text-primary" /> Business Information
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -66,7 +66,7 @@ export function Profile() {
       {/* Location */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-base text-text-primary mb-3 flex items-center gap-2">
             <MapPin size={18} className="text-primary" /> Location
           </h3>
           <div className="text-sm flex flex-col gap-1">
@@ -79,7 +79,7 @@ export function Profile() {
       {/* Service Area */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-base text-text-primary mb-3 flex items-center gap-2">
             <Truck size={18} className="text-primary" /> Service Area & Delivery
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -102,7 +102,7 @@ export function Profile() {
       {/* Catalogue */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-base text-text-primary mb-3 flex items-center gap-2">
             <Package size={18} className="text-primary" /> Catalogue Capabilities
           </h3>
           <div className="flex flex-col gap-4 text-sm">

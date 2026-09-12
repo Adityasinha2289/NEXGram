@@ -13,7 +13,7 @@ export function PackProductCard({ product, onRemove }) {
         {/* Header */}
         <div className="flex justify-between items-start gap-2">
           <div>
-            <p className="text-xs text-text-muted uppercase font-bold tracking-wider mb-0.5">{product.category}</p>
+            <p className="eyebrow mb-0.5">{product.category}</p>
             <h4 className="font-bold text-lg text-text-primary leading-tight">
               {product.name} {product.variant && <span className="text-text-muted font-medium text-sm">{product.variant}</span>}
             </h4>
@@ -26,21 +26,21 @@ export function PackProductCard({ product, onRemove }) {
         {/* Metrics Grid */}
         <div className="grid grid-cols-2 gap-2 bg-surface-muted p-2 rounded-md border border-border/50">
           <div className="flex flex-col">
-            <span className="text-[10px] text-text-muted flex items-center gap-1"><Package size={12}/> Qty</span>
+            <span className="text-2xs text-text-muted flex items-center gap-1"><Package size={12}/> Qty</span>
             <span className="font-bold text-sm text-text-primary">{product.suggestedQuantity} &times; {product.variant || product.unit}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-text-muted flex items-center gap-1"><Tag size={12}/> Est. Price</span>
+            <span className="text-2xs text-text-muted flex items-center gap-1"><Tag size={12}/> Est. Price</span>
             <span className="font-bold text-sm text-primary">
               ₹{Math.round(product.lineTotal ?? product.price).toLocaleString('en-IN')}
             </span>
-            <span className="text-[10px] text-text-muted">₹{product.price.toLocaleString('en-IN')} per pack</span>
+            <span className="text-2xs text-text-muted">₹{product.price.toLocaleString('en-IN')} per pack</span>
           </div>
           <div className="col-span-2 pt-1 border-t border-border/50 mt-1 flex items-center gap-1 flex-wrap">
              <Box size={12} className="text-text-muted" />
-             <span className="text-[10px] text-text-muted">MOQ: {product.minimumOrderQuantity} packs</span>
+             <span className="text-2xs text-text-muted">MOQ: {product.minimumOrderQuantity} packs</span>
              {product.distributorName && (
-               <span className="text-[10px] text-text-muted">&middot; {product.distributorName}</span>
+               <span className="text-2xs text-text-muted">&middot; {product.distributorName}</span>
              )}
           </div>
         </div>

@@ -232,7 +232,7 @@ export function EditProfile() {
         <Card key={group.section} className="border-border">
           <CardContent className="p-4 flex flex-col gap-4">
             <div>
-              <h3 className="font-bold text-md text-text-primary">{group.section}</h3>
+              <h3 className="font-bold text-base text-text-primary">{group.section}</h3>
               {group.hint && (
                 <p className="text-xs text-text-muted mt-0.5 flex items-start gap-1">
                   <Info size={12} className="mt-0.5 flex-shrink-0" /> {group.hint}

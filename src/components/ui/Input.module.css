@@ -1,43 +1,98 @@
-.wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-1);
-}
+/*
+ * Wrapped in @layer components so a utility class passed through `className`
+ * can still override it. Unlayered, these rules outranked every Tailwind
+ * utility regardless of specificity, which silently discarded the p-0 and p-4
+ * that callers were passing to Card, Button and Input.
+ */
+@layer components {
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    min-width: 0;
+  }
 
-.w-full {
-  width: 100%;
-}
+  .w-full {
+    width: 100%;
+  }
 
-.label {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-main);
-}
+  .label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
 
-.input {
-  padding: var(--spacing-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  background-color: var(--color-surface);
-}
+  /* The icon sits inside the field rather than beside it, so the control keeps
+     one rectangle and one focus ring. */
+  .field {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
 
-.input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-light);
-}
+  .icon {
+    position: absolute;
+    left: var(--spacing-3);
+    display: flex;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
 
-.input.error {
-  border-color: var(--color-error);
-}
+  .input {
+    width: 100%;
+    height: 42px;
+    padding: 0 var(--spacing-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    background-color: var(--color-surface);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
 
-.input.error:focus {
-  box-shadow: 0 0 0 2px var(--color-error-bg);
-}
+  .hasIcon {
+    padding-left: 2.375rem;
+  }
 
-.errorText {
-  font-size: var(--font-size-xs);
-  color: var(--color-error);
+  .input::placeholder {
+    color: var(--color-text-faint);
+  }
+
+  .input:hover:not(:disabled):not(:focus) {
+    border-color: var(--color-text-faint);
+  }
+
+  .input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+
+  .input:disabled {
+    background-color: var(--color-surface-muted);
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+  }
+
+  .input.error {
+    border-color: var(--color-error);
+  }
+
+  .input.error:focus {
+    box-shadow: 0 0 0 3px var(--color-error-bg);
+  }
+
+  .errorText {
+    font-size: var(--font-size-xs);
+    color: var(--color-error);
+  }
+
+  /* A textarea has to grow, so it cannot inherit the fixed control height. */
+  .multiline {
+    height: auto;
+    min-height: 96px;
+    padding: var(--spacing-3);
+    line-height: 1.5;
+    resize: vertical;
+  }
 }

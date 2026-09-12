@@ -1,39 +1,72 @@
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.125rem 0.5rem;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-}
+/*
+ * Wrapped in @layer components so a utility class passed through `className`
+ * can still override it. Unlayered, these rules outranked every Tailwind
+ * utility regardless of specificity, which silently discarded the p-0 and p-4
+ * that callers were passing to Card, Button and Input.
+ */
+@layer components {
+  /*
+   * A status chip, not a pill.
+   *
+   * The fully-rounded shape read as decorative next to squared-off cards and
+   * inputs; a small radius reads as a label attached to data, which is what it
+   * is. Sized to sit on the same baseline as the small text beside it.
+   */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: 0.1875rem 0.4375rem;
+    font-size: var(--text-2xs);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+  }
 
-.badge-primary {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
-}
+  /* The dot carries the status at a glance for anyone who reads colour poorly,
+     and gives the chip an optical left edge. */
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: var(--radius-full);
+    background-color: currentColor;
+    flex-shrink: 0;
+  }
 
-.badge-secondary {
-  background-color: var(--color-secondary-light);
-  color: var(--color-secondary-hover);
-}
+  .badge-neutral {
+    background-color: var(--color-surface-muted);
+    color: var(--color-text-secondary);
+  }
 
-.badge-success {
-  background-color: var(--color-success-bg);
-  color: var(--color-success);
-}
+  .badge-primary {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-hover);
+  }
 
-.badge-warning {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning);
-}
+  .badge-secondary {
+    background-color: var(--color-secondary-light);
+    color: var(--color-secondary-hover);
+  }
 
-.badge-danger {
-  background-color: var(--color-danger-bg);
-  color: var(--color-danger);
-}
+  .badge-success {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+  }
 
-.badge-info {
-  background-color: var(--color-info-bg);
-  color: var(--color-info);
+  .badge-warning {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning);
+  }
+
+  .badge-danger {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger);
+  }
+
+  .badge-info {
+    background-color: var(--color-info-bg);
+    color: var(--color-info);
+  }
 }

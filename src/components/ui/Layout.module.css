@@ -1,45 +1,62 @@
-.layout {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  width: 100%;
-}
+/*
+ * Wrapped in @layer components so a utility class passed through `className`
+ * can still override it. Unlayered, these rules outranked every Tailwind
+ * utility regardless of specificity, which silently discarded the p-0 and p-4
+ * that callers were passing to Card, Button and Input.
+ */
+@layer components {
+  /*
+   * The page column width is declared once, here, as a custom property, because
+   * three fixed-position elements have to agree on it: the content container, the
+   * header's inner row, and the stale-data banner. When they disagreed, the
+   * header's title sat over empty space while the content was centred elsewhere.
+   */
+  .layout {
+    --page-max: 980px;
+    min-height: 100vh;
+    width: 100%;
+  }
 
-.content {
-  flex: 1;
-  padding-top: 60px; /* clears the fixed header */
-}
+  .narrow {
+    --page-max: 660px;
+  }
 
-.hasBottomNav {
-  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
-}
+  .wide {
+    --page-max: var(--max-width-wide);
+  }
 
-.container {
-  width: 100%;
-  max-width: var(--max-width-desktop);
-  margin: 0 auto;
-  padding: var(--spacing-md);
-}
+  .content {
+    padding-top: var(--top-nav-height);
+  }
 
-@media (min-width: 768px) {
-  /* The nav becomes a left sidebar, so the page body moves over rather than
-     reserving space at the bottom for a bar that is no longer there. */
   .hasBottomNav {
-    padding-bottom: 0;
-    padding-left: var(--sidebar-width);
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
   }
 
   .container {
-    /* Comfortable reading measure, centred in the space beside the sidebar.
-       Cards stretched across the full 1024px looked empty. */
-    max-width: 880px;
+    width: 100%;
+    /* min() rather than a bare max-width so the phone case needs no override. */
+    max-width: min(var(--page-max), 100%);
     margin: 0 auto;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-2xl);
   }
-}
 
-@media (min-width: 1200px) {
-  .container {
-    padding: var(--spacing-xl);
+  @media (min-width: 768px) {
+    /* The nav becomes a left sidebar, so the page body moves over rather than
+       reserving space at the bottom for a bar that is no longer there. */
+    .hasBottomNav {
+      padding-bottom: 0;
+      padding-left: var(--sidebar-width);
+    }
+
+    .container {
+      padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-2xl);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .container {
+      padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-2xl);
+    }
   }
 }

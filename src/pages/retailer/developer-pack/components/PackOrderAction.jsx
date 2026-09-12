@@ -70,7 +70,7 @@ export function PackOrderAction({ packItems, onOrdered }) {
   return (
     <Card className="border-primary/20 bg-primary/5">
       <CardContent className="p-4 flex flex-col gap-3">
-        <h3 className="font-bold text-md text-text-primary">Order Bhejein</h3>
+        <h3 className="font-bold text-base text-text-primary">Order Bhejein</h3>
         <p className="text-sm text-text-muted leading-snug">
           {groups.length === 1
             ? 'Yeh pack ek supplier se aa raha hai.'

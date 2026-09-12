@@ -25,7 +25,7 @@ export function PackContextCard({ packItems = [] }) {
         </div>
       </div>
       <div className="flex flex-col items-center gap-1 flex-shrink-0">
-        <span className="text-[10px] uppercase font-bold text-primary">Pack Dekho</span>
+        <span className="eyebrow text-primary">Pack Dekho</span>
         <div className="w-8 h-8 rounded-full bg-surface shadow-sm flex items-center justify-center text-primary">
           <ArrowRight size={16} />
         </div>

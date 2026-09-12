@@ -1,43 +1,44 @@
 @import "tailwindcss";
 
 /*
- * Design tokens — Rural Professional Theme.
+ * Design tokens.
  *
- * Colours live in @theme so Tailwind generates the utilities the components
- * already use: --color-surface-muted becomes bg-surface-muted, --color-text-muted
- * becomes text-text-muted, and so on. Tailwind also emits every token here as a
- * CSS custom property on :root, so the *.module.css files keep resolving var(--color-*).
+ * Colours and the type scale live in @theme so Tailwind generates the matching
+ * utilities: --color-surface-muted becomes bg-surface-muted, --text-2xs becomes
+ * text-2xs. Tailwind also emits every token here as a custom property on :root,
+ * so the *.module.css files keep resolving var(--color-*).
  *
- * Non-colour tokens stay in the plain :root block below. Putting them in @theme
- * would override Tailwind's own --radius-*, --shadow-* and --text-* scales and
- * silently change what rounded-lg / shadow-sm / text-sm mean.
+ * Non-colour, non-type tokens stay in the plain :root block below.
  */
 @theme {
   /* Deep field green: the brand colour, dark enough to carry white text at
      the contrast an outdoor phone screen needs. */
   --color-primary: #216c11;
   --color-primary-hover: #17510a;
+  --color-primary-active: #113f06;
   --color-primary-light: #e6f2e1;
-  --color-primary-subtle: #f2f8ef;
+  --color-primary-subtle: #f3f8f0;
 
   /* Warm terracotta for the secondary action, borrowed from the setting rather
      than a generic orange. */
   --color-secondary: #c2612c;
   --color-secondary-hover: #a44f22;
   --color-secondary-light: #fbeee4;
+  --color-secondary-subtle: #fdf7f2;
 
   /* Neutrals carry a slight green bias so they sit with the brand instead of
      looking like a different design. */
-  --color-background: #f7f8f5;
+  --color-background: #f6f7f3;
   --color-surface: #ffffff;
-  --color-surface-muted: #f0f2ed;
-  --color-surface-sunken: #e8ebe4;
-  --color-border: #e2e6dd;
-  --color-border-strong: #cbd1c3;
+  --color-surface-muted: #f1f3ed;
+  --color-surface-sunken: #e7eae1;
+  --color-border: #e3e6dd;
+  --color-border-strong: #cfd4c6;
 
-  --color-text-primary: #171d14;
-  --color-text-secondary: #414a3c;
-  --color-text-muted: #6b7565;
+  --color-text-primary: #141810;
+  --color-text-secondary: #3d443a;
+  --color-text-muted: #6a7265;
+  --color-text-faint: #939b8e;
   --color-text-inverse: #ffffff;
 
   /* Semantic colours, kept separate from the brand accent so "good" never
@@ -46,23 +47,40 @@
   --color-danger-bg: #fceeed;
   --color-success: #1d7a45;
   --color-success-bg: #e4f3ea;
-  --color-warning: #9a6700;
-  --color-warning-bg: #fdf3d9;
-  --color-warning-light: #fdf3d9;
+  --color-warning: #8a5a00;
+  --color-warning-bg: #fbf1d6;
+  --color-warning-light: #fbf1d6;
   --color-info: #0b6b8a;
   --color-info-bg: #e3f2f7;
 
+  /*
+   * One step below Tailwind's text-xs, for the uppercase micro-labels that
+   * caption almost every figure in the app. It existed as 39 copies of
+   * text-[10px] before it was a token.
+   */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  /* Display sizes for page titles and headline figures. Tracking tightens as
+     size grows, which is what keeps large type from looking loose. */
+  --text-display: 1.75rem;
+  --text-display--line-height: 1.15;
+  --text-display--letter-spacing: -0.022em;
+  --text-display-lg: 2.25rem;
+  --text-display-lg--line-height: 1.08;
+  --text-display-lg--letter-spacing: -0.028em;
+
   --animate-fade-in: fade-in 0.25s ease-out;
+  --animate-rise: rise 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 
   @keyframes fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
   }
 }
 
@@ -72,7 +90,13 @@
   --color-error-bg: var(--color-danger-bg);
   --color-text-main: var(--color-text-primary);
 
-  /* Typography (rem-based) */
+  /*
+   * One variable family rather than a display/body pair: the target user is on
+   * a metered rural connection, and a second face would cost them real money
+   * for decoration. Hierarchy comes from the weight, size and tracking scale
+   * instead — which is also why the display sizes above carry their own
+   * letter-spacing.
+   */
   --font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
@@ -83,7 +107,12 @@
   --font-size-2xl: 1.5rem;
   --font-size-3xl: 1.875rem;
 
-  /* Spacing */
+  /* Spacing, on a 4px grid. The numeric aliases exist because several module
+     stylesheets were written against a scale that was never declared. */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
@@ -91,27 +120,33 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
 
-  /* Border Radius */
-  --radius-sm: 0.25rem;
+  /* Border radius. Tighter than before: a 12px radius on every surface reads
+     as a toy, and the difference between a card and a chip should be legible. */
+  --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-full: 9999px;
 
-  /* Elevation, tinted with the neutral hue rather than pure black. */
-  --shadow-sm: 0 1px 2px rgba(23, 29, 20, 0.05);
-  --shadow-md: 0 2px 8px -2px rgba(23, 29, 20, 0.08), 0 1px 2px rgba(23, 29, 20, 0.04);
-  --shadow-lg: 0 12px 28px -8px rgba(23, 29, 20, 0.14), 0 2px 6px rgba(23, 29, 20, 0.05);
+  /* Elevation, tinted with the neutral hue rather than pure black, and kept
+     shallow: separation here comes from borders, with shadow reserved for the
+     things that genuinely float. */
+  --shadow-xs: 0 1px 2px rgba(20, 24, 15, 0.04);
+  --shadow-sm: 0 1px 3px rgba(20, 24, 15, 0.06), 0 1px 2px -1px rgba(20, 24, 15, 0.04);
+  --shadow-md: 0 4px 12px -4px rgba(20, 24, 15, 0.10), 0 2px 4px -2px rgba(20, 24, 15, 0.05);
+  --shadow-lg: 0 16px 40px -12px rgba(20, 24, 15, 0.16), 0 4px 10px -4px rgba(20, 24, 15, 0.06);
 
   /* Chrome dimensions, shared by Layout, TopNav and BottomNav so they cannot
      drift out of alignment. */
-  --bottom-nav-height: 70px;
-  --sidebar-width: 220px;
+  --top-nav-height: 60px;
+  --bottom-nav-height: 68px;
+  --sidebar-width: 232px;
 
   /* Layout constraints */
   --max-width-mobile: 480px;
   --max-width-tablet: 768px;
   --max-width-desktop: 1024px;
+  --max-width-wide: 1240px;
 
   /* Z-index layers */
   --z-base: 1;
@@ -167,6 +202,21 @@
     font-family: inherit;
     font-size: inherit;
   }
+
+  /*
+   * Keyboard focus was invisible everywhere before this. :where() holds the
+   * specificity at zero so a component can still style its own focus state.
+   */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background-color: var(--color-primary-light);
+    color: var(--color-text-primary);
+  }
 }
 
 /* Base App Layout */
@@ -191,6 +241,37 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/*
+ * The uppercase micro-label that captions a figure, names a category or heads
+ * a column. Written out inline it was five utilities repeated forty times, and
+ * it had drifted to three sizes and two weights along the way.
+ */
+@utility eyebrow {
+  font-size: var(--text-2xs);
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/*
+ * A bordered surface with no elevation — the default container. Shadow is
+ * reserved for the one element on a screen that genuinely sits above the page,
+ * because a shadow on everything flattens the hierarchy it exists to create.
+ */
+@utility panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+/* Figures that sit in a column, or change in place, must not shift as they do. */
+@utility num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'zero' 1;
 }
 
 /* A score is the product's central claim, so it gets a real presentation rather

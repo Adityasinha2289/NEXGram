@@ -16,7 +16,7 @@ export function ProductCard({ product, onEdit, onRemove }) {
       <CardContent className="p-4 flex flex-col gap-3">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-bold text-text-primary text-md leading-tight">{product.name}</h3>
+            <h3 className="font-bold text-text-primary text-base leading-tight">{product.name}</h3>
             <p className="text-sm text-text-muted">{product.category}</p>
           </div>
           <Badge variant={status.variant} className="ml-2 flex-shrink-0">

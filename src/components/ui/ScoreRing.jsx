@@ -32,7 +32,7 @@ export function ScoreRing({ score = 0, tier, confidence, size = 'md', showLabel 
         </div>
       </div>
       {showLabel && confidence && (
-        <span className="text-[10px] uppercase tracking-wider font-bold text-text-muted">
+        <span className="eyebrow">
           {confidence}
         </span>
       )}

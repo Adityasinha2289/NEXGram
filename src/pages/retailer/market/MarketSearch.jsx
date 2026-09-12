@@ -81,29 +81,29 @@ export function MarketSearch() {
                     >
                       <div className="flex justify-between items-start gap-3">
                         <div className="min-w-0">
-                          <p className="text-[10px] uppercase font-bold tracking-wider text-text-muted">
+                          <p className="eyebrow">
                             {item.category}
                           </p>
                           <h3 className="font-bold text-text-primary leading-tight">{item.name}</h3>
                         </div>
                         <div className="text-right flex-shrink-0">
                           <p className="font-bold text-primary">{rupees(item.bestPrice)}</p>
-                          <p className="text-[10px] text-text-muted">se shuru</p>
+                          <p className="text-2xs text-text-muted">se shuru</p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant={item.supplierCount > 1 ? 'success' : 'warning'} className="text-[10px]">
+                        <Badge variant={item.supplierCount > 1 ? 'success' : 'warning'} className="text-2xs">
                           {item.supplierCount} supplier{item.supplierCount === 1 ? '' : 's'}
                         </Badge>
                         {item.retailersAsking > 0 && (
-                          <span className="text-[11px] text-text-muted flex items-center gap-1">
+                          <span className="text-2xs text-text-muted flex items-center gap-1">
                             <TrendingUp size={11} /> {item.retailersAsking} shop
                             {item.retailersAsking === 1 ? '' : 's'} maang rahe hain
                           </span>
                         )}
                         {item.priceSpread > 0 && (
-                          <span className="text-[11px] text-success font-medium">
+                          <span className="text-2xs text-success font-medium">
                             {rupees(item.priceSpread)} tak bacha sakte hain ({item.comparableVariant})
                           </span>
                         )}
@@ -131,7 +131,7 @@ export function MarketSearch() {
                                   {offer.variant} &middot; MOQ {offer.minimumOrderQuantity} &middot;{' '}
                                   {offer.availableStock} in stock
                                 </span>
-                                <span className="flex items-center gap-2 text-[11px] text-text-muted mt-0.5">
+                                <span className="flex items-center gap-2 text-2xs text-text-muted mt-0.5">
                                   {offer.sameArea && (
                                     <span className="flex items-center gap-1">
                                       <MapPin size={10} /> Aapke area mein

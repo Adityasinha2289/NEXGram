@@ -48,7 +48,7 @@ export function PackSummary({ packItems, totalEstimatedPrice, budget, budgetStat
           
           <div className="mt-4 p-2 bg-warning-light rounded-md flex gap-2">
             <Info size={14} className="text-warning flex-shrink-0 mt-0.5" />
-            <p className="text-[10px] text-text-primary leading-tight">
+            <p className="text-2xs text-text-primary leading-tight">
               Final price distributor ke hisaab se change ho sakta hai. Yeh sirf estimate hai.
             </p>
           </div>
@@ -58,7 +58,7 @@ export function PackSummary({ packItems, totalEstimatedPrice, budget, budgetStat
       {packItems.length > 0 && (
         <Card className="border-border bg-surface-muted/50">
           <CardContent className="p-4">
-            <h3 className="font-bold text-md text-text-primary mb-3 flex items-center gap-2">
+            <h3 className="font-bold text-base text-text-primary mb-3 flex items-center gap-2">
               Yeh Pack Kyun?
             </h3>
             <ul className="flex flex-col gap-3">

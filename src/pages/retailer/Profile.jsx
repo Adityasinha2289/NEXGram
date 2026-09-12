@@ -40,7 +40,7 @@ export function Profile() {
       {/* Basic Info */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-base text-text-primary mb-3 flex items-center gap-2">
             <User size={18} className="text-primary" /> Basic Information
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -63,7 +63,7 @@ export function Profile() {
       {/* Location */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-base text-text-primary mb-3 flex items-center gap-2">
             <MapPin size={18} className="text-primary" /> Location
           </h3>
           <div className="text-sm flex flex-col gap-1">
@@ -76,7 +76,7 @@ export function Profile() {
       {/* Financials & Purchasing */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-base text-text-primary mb-3 flex items-center gap-2">
             <Wallet size={18} className="text-primary" /> Business & Purchasing
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -103,7 +103,7 @@ export function Profile() {
       {/* Requirements */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-base text-text-primary mb-3 flex items-center gap-2">
             <ClipboardList size={18} className="text-primary" /> Requirements
           </h3>
           <div className="flex flex-col gap-4 text-sm">

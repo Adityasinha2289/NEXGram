@@ -41,7 +41,7 @@ export function BusinessContextCard() {
   return (
     <Card className="bg-surface border-border">
       <CardContent className="p-4">
-        <h3 className="font-bold text-md text-text-primary mb-3">Aapka Business</h3>
+        <h3 className="font-bold text-base text-text-primary mb-3">Aapka Business</h3>
         <dl className="flex flex-col gap-3">
           {rows.map(({ icon: Icon, label, value }) => (
             <div key={label} className="flex items-start gap-3">

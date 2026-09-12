@@ -78,7 +78,7 @@ export function OrderDetail() {
       {/* Progress Timeline */}
       <Card className="border-border">
         <CardContent className="p-5">
-          <h3 className="font-bold text-md text-text-primary mb-4">Order Status</h3>
+          <h3 className="font-bold text-base text-text-primary mb-4">Order Status</h3>
           
           {(isCancelled || isRejected) ? (
             <div className="flex items-center gap-2 text-danger">
@@ -119,7 +119,7 @@ export function OrderDetail() {
       {/* Order Summary */}
       <Card className="border-border">
         <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3">Order Items</h3>
+          <h3 className="font-bold text-base text-text-primary mb-3">Order Items</h3>
           <ul className="flex flex-col gap-3">
             {order.items.map((item) => (
               <li key={item.id} className="flex justify-between items-start text-sm border-b border-border/50 pb-2 last:border-0 last:pb-0">

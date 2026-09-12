@@ -69,7 +69,7 @@ export function PackProductSelector({ onAdd, onCancel, currentPackItems }) {
             filteredProducts.map(product => (
               <div key={product.id} className="flex items-center justify-between p-3 border border-border rounded-lg bg-surface">
                 <div className="flex-1 mr-3">
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-text-muted">{product.category}</p>
+                  <p className="eyebrow">{product.category}</p>
                   <p className="font-bold text-sm text-text-primary">{product.name}</p>
                   <p className="text-xs text-text-muted mt-0.5">
                     {product.variant} &middot; ₹{product.price}/pack &middot; MOQ {product.minimumOrderQuantity} &middot; {product.distributorName}

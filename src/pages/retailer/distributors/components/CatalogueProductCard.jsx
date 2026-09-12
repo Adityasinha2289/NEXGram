@@ -19,10 +19,10 @@ export function CatalogueProductCard({ product, isAlreadyInPack, onAddToPack }) 
         {/* Header */}
         <div className="flex justify-between items-start gap-2">
           <div>
-            <p className="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-0.5">{product.category}</p>
-            <h4 className="font-bold text-md text-text-primary leading-tight">{product.name}</h4>
+            <p className="eyebrow mb-0.5">{product.category}</p>
+            <h4 className="font-bold text-base text-text-primary leading-tight">{product.name}</h4>
           </div>
-          <Badge variant={getAvailabilityBadge(product.stockStatus)} className="flex-shrink-0 text-[10px] py-0.5">
+          <Badge variant={getAvailabilityBadge(product.stockStatus)} className="flex-shrink-0 text-2xs py-0.5">
             {product.stockStatus}
           </Badge>
         </div>
@@ -33,7 +33,7 @@ export function CatalogueProductCard({ product, isAlreadyInPack, onAddToPack }) 
           <span className="text-xs text-text-muted mb-0.5">/ {product.unit}</span>
         </div>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 border-t border-border/50 pt-2 text-[11px] text-text-muted">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 border-t border-border/50 pt-2 text-2xs text-text-muted">
           <span className="flex items-center gap-1"><Box size={12}/> MOQ: {product.minimumOrderQuantity} {product.unit}</span>
           <span className="flex items-center gap-1"><Clock size={12}/> {product.deliveryTime}</span>
         </div>

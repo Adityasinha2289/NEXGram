@@ -96,7 +96,7 @@ export function ReportDemand() {
           {selected ? (
             <div className="bg-surface border border-primary/20 rounded-lg p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-text-muted">
+                <p className="eyebrow">
                   {selected.category?.name || 'Product'}
                 </p>
                 <p className="font-bold text-text-primary truncate">{selected.canonical_name}</p>
@@ -126,7 +126,7 @@ export function ReportDemand() {
                       onClick={() => { setSelected(product); setMatches([]); }}
                       className="w-full text-left p-3 hover:bg-surface-muted"
                     >
-                      <span className="block text-[10px] uppercase font-bold tracking-wider text-text-muted">
+                      <span className="block eyebrow">
                         {product.category?.name || 'Product'}
                       </span>
                       <span className="font-medium text-sm text-text-primary">{product.canonical_name}</span>
@@ -183,7 +183,7 @@ export function ReportDemand() {
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0">
                         {report.category && (
-                          <p className="text-[10px] uppercase font-bold tracking-wider text-text-muted">
+                          <p className="eyebrow">
                             {report.category}
                           </p>
                         )}
@@ -194,7 +194,7 @@ export function ReportDemand() {
                           <p className="text-xs text-text-muted mt-0.5">{report.note}</p>
                         )}
                       </div>
-                      <span className="text-[11px] text-text-muted flex items-center gap-1 flex-shrink-0">
+                      <span className="text-2xs text-text-muted flex items-center gap-1 flex-shrink-0">
                         <Clock size={11} />
                         {new Date(report.reportedAt).toLocaleDateString('en-IN')}
                       </span>

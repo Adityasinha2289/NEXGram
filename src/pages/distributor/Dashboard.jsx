@@ -37,8 +37,8 @@ export function DistributorDashboard() {
           <CardContent className="p-3 flex flex-col items-center text-center justify-center h-full gap-1">
             <Target className="text-success mb-1" size={20} />
             <p className="text-lg font-bold text-text-primary leading-none">{snapshot.opportunityScore}</p>
-            <p className="text-[10px] uppercase font-bold text-text-muted tracking-wider leading-tight">Opportunity</p>
-            <p className="text-[10px] text-success leading-tight mt-1">{snapshot.opportunityLabel}</p>
+            <p className="eyebrow">Opportunity</p>
+            <p className="text-2xs text-success leading-tight mt-1">{snapshot.opportunityLabel}</p>
           </CardContent>
         </Card>
         
@@ -46,8 +46,8 @@ export function DistributorDashboard() {
           <CardContent className="p-3 flex flex-col items-center text-center justify-center h-full gap-1">
             <Users className="text-primary mb-1" size={20} />
             <p className="text-lg font-bold text-text-primary leading-none">{snapshot.retailersLooking}</p>
-            <p className="text-[10px] uppercase font-bold text-text-muted tracking-wider leading-tight">Retailers</p>
-            <p className="text-[10px] text-text-muted leading-tight mt-1">{snapshot.retailersLabel}</p>
+            <p className="eyebrow">Retailers</p>
+            <p className="text-2xs text-text-muted leading-tight mt-1">{snapshot.retailersLabel}</p>
           </CardContent>
         </Card>
 
@@ -55,8 +55,8 @@ export function DistributorDashboard() {
           <CardContent className="p-3 flex flex-col items-center text-center justify-center h-full gap-1">
             <PackageOpen className="text-secondary mb-1" size={20} />
             <p className="text-lg font-bold text-text-primary leading-none">{catalogue.totalProducts}</p>
-            <p className="text-[10px] uppercase font-bold text-text-muted tracking-wider leading-tight">Products</p>
-            <p className="text-[10px] text-text-muted leading-tight mt-1">{catalogue.totalCategories} categories</p>
+            <p className="eyebrow">Products</p>
+            <p className="text-2xs text-text-muted leading-tight mt-1">{catalogue.totalCategories} categories</p>
           </CardContent>
         </Card>
       </section>
@@ -124,8 +124,8 @@ export function DistributorDashboard() {
               <CardContent className="p-4 flex flex-col gap-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-xs text-text-muted uppercase font-bold tracking-wider mb-0.5">{gap.category}</p>
-                    <h4 className="font-bold text-md text-text-primary leading-tight">{gap.product}</h4>
+                    <p className="eyebrow mb-0.5">{gap.category}</p>
+                    <h4 className="font-bold text-base text-text-primary leading-tight">{gap.product}</h4>
                   </div>
                   <Badge variant={gap.badgeVariant}>{gap.opportunity} Opportunity</Badge>
                 </div>

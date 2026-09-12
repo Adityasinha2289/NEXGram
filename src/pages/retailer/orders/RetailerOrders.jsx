@@ -70,7 +70,7 @@ export function RetailerOrders() {
               <CardContent className="p-4 flex flex-col gap-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-bold text-md text-text-primary">{order.order_number}</h4>
+                    <h4 className="font-bold text-base text-text-primary">{order.order_number}</h4>
                     <p className="text-xs text-text-muted">{order.distributor_name}</p>
                   </div>
                   <Badge variant={getStatusBadge(order.status)} className="capitalize">{order.status}</Badge>
@@ -86,7 +86,7 @@ export function RetailerOrders() {
                   
                   <div className="flex items-center gap-2 text-text-muted">
                     <div className="flex flex-col items-end gap-1">
-                      <span className="text-[10px] flex items-center gap-1">
+                      <span className="text-2xs flex items-center gap-1">
                         <Clock size={10} /> {new Date(order.created_at).toLocaleDateString()}
                       </span>
                     </div>

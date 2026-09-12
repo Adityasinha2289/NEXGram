@@ -1,123 +1,125 @@
 /*
- * Full-bleed bar with its contents aligned to the same column as the page body.
- * It used to clamp to 480px above mobile while the content ran to 1024px, which
- * left a green stub floating in the middle of a desktop window.
+ * Wrapped in @layer components so a utility class passed through `className`
+ * can still override it. Unlayered, these rules outranked every Tailwind
+ * utility regardless of specificity, which silently discarded the p-0 and p-4
+ * that callers were passing to Card, Button and Input.
  */
-.topnav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background-color: var(--color-primary);
-  color: var(--color-text-inverse);
-  display: flex;
-  align-items: center;
-  z-index: 60;
-  box-shadow: var(--shadow-sm);
-}
-
-.inner {
-  width: 100%;
-  max-width: var(--max-width-desktop);
-  margin: 0 auto;
-  padding: 0 var(--spacing-md);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-}
-
-.title {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.brand {
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  display: none;
-}
-
-.iconBtn {
-  background: transparent;
-  border: none;
-  color: var(--color-text-inverse);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* 44px keeps the tap target usable on a phone. */
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-full);
-  transition: background-color 0.2s ease;
-  flex-shrink: 0;
-}
-
-.iconBtn:hover {
-  background-color: rgba(255, 255, 255, 0.12);
-}
-
-.iconBtn:focus-visible {
-  outline: 2px solid var(--color-text-inverse);
-  outline-offset: 2px;
-}
-
-/* Pushed to the far edge; the title keeps the space between. */
-.actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-/* On mobile the brand is hidden, so without this the title would sit flush left
-   when there is no back button. */
-.topnav .title {
-  flex: 1;
-  text-align: center;
-}
-
-@media (min-width: 768px) {
-  .topnav .title {
-    flex: 0 1 auto;
-    text-align: left;
+@layer components {
+  /*
+   * Neutral chrome.
+   *
+   * The bar used to be a solid block of brand green across the top of every
+   * screen, which meant the green of a primary button had to compete with it for
+   * attention and lost. Colour is worth more spent on the one control that wants
+   * pressing than on a permanent strip the user stops seeing after a minute.
+   */
+  .topnav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--top-nav-height);
+    background-color: rgba(255, 255, 255, 0.88);
+    backdrop-filter: saturate(1.6) blur(12px);
+    -webkit-backdrop-filter: saturate(1.6) blur(12px);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    z-index: 60;
   }
-}
 
-/* Desktop: the sidebar carries navigation, so the bar shows the brand and the
-   current screen instead of a hamburger. */
-@media (min-width: 768px) {
   .inner {
-    padding-left: calc(var(--sidebar-width) + var(--spacing-lg));
-    padding-right: var(--spacing-lg);
-    max-width: none;
-    justify-content: flex-start;
-    gap: var(--spacing-md);
-  }
-
-  .topnav .title {
-    flex: 0 1 auto;
-  }
-
-  .brand {
-    display: block;
+    width: 100%;
+    max-width: min(var(--page-max), 100%);
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
   }
 
   .title {
     font-size: var(--font-size-md);
-    opacity: 0.85;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Centred on a phone, where the back button and the actions flank it. */
+    flex: 1;
+    text-align: center;
   }
 
-  .title::before {
-    content: '/';
-    margin-right: var(--spacing-sm);
-    opacity: 0.5;
+  /* The wordmark stands in for the back button on a phone's top-level screens. */
+  .brand {
+    font-weight: 700;
+    font-size: var(--font-size-md);
+    letter-spacing: -0.02em;
+    color: var(--color-primary);
+    flex-shrink: 0;
+    padding-left: var(--spacing-xs);
+  }
+
+  .iconBtn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 44px keeps the tap target usable on a phone. */
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    transition: background-color 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  .iconBtn:hover {
+    background-color: var(--color-surface-muted);
+    color: var(--color-text-primary);
+  }
+
+  /* Pushed to the far edge; the title keeps the space between. */
+  .actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  /*
+   * Desktop: the sidebar occupies the left edge and carries the brand, so the bar
+   * starts where the content does and holds only where-you-are and who-you-are.
+   */
+  @media (min-width: 768px) {
+    .topnav {
+      left: var(--sidebar-width);
+    }
+
+    .inner {
+      padding: 0 var(--spacing-lg);
+    }
+
+    .title {
+      flex: 0 1 auto;
+      text-align: left;
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+    }
+
+    .brand {
+      display: none;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .inner {
+      padding: 0 var(--spacing-xl);
+    }
   }
 }

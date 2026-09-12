@@ -62,15 +62,15 @@ export function Reorder() {
                 <CardContent className="p-4 flex flex-col gap-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-bold text-md text-text-primary">
+                      <h4 className="font-bold text-base text-text-primary">
                         {item.name} <span className="text-text-muted font-medium text-sm">{item.variant}</span>
                       </h4>
                       <p className="text-xs text-text-muted mt-0.5">Supplier: {item.distributorName}</p>
-                      {item.dueNow && <Badge variant="warning" className="mt-1.5 text-[10px]">Due now</Badge>}
+                      {item.dueNow && <Badge variant="warning" className="mt-1.5 text-2xs">Due now</Badge>}
                     </div>
                     <div className="text-right">
                       <span className="font-bold text-primary block">₹{item.price}</span>
-                      <span className="text-[10px] text-text-muted">/ {item.unit}</span>
+                      <span className="text-2xs text-text-muted">/ {item.unit}</span>
                     </div>
                   </div>
                   

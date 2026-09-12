@@ -129,16 +129,16 @@ export function ProductForm({ initialData = null, prefill = null, onSubmit, onCa
         <div className="p-4 flex flex-col gap-4">
           {isEditing ? (
             <div className="bg-surface-muted border border-border rounded-lg p-3">
-              <p className="text-[10px] uppercase font-bold tracking-wider text-text-muted">Product</p>
+              <p className="eyebrow">Product</p>
               <p className="font-bold text-text-primary">{initialData.name}</p>
             </div>
           ) : selection ? (
             <div className="bg-primary-light border border-primary/20 rounded-lg p-3 flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] uppercase font-bold tracking-wider text-text-muted">{selection.category}</p>
+                <p className="eyebrow">{selection.category}</p>
                 <p className="font-bold text-text-primary">{selection.label}</p>
                 {prefill?.variantId === selection.variantId && (
-                  <p className="text-[11px] text-primary mt-0.5">Opportunity se aaya hai</p>
+                  <p className="text-2xs text-primary mt-0.5">Opportunity se aaya hai</p>
                 )}
               </div>
               <button
@@ -171,7 +171,7 @@ export function ProductForm({ initialData = null, prefill = null, onSubmit, onCa
                       className="w-full text-left p-3 hover:bg-surface-muted flex items-center justify-between gap-2"
                     >
                       <span>
-                        <span className="block text-[10px] uppercase font-bold tracking-wider text-text-muted">
+                        <span className="block eyebrow">
                           {choice.category}
                         </span>
                         <span className="font-medium text-sm text-text-primary">{choice.label}</span>

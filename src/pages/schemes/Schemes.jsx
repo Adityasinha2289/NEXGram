@@ -75,7 +75,7 @@ export function Schemes() {
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="min-w-0">
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-text-muted flex items-center gap-1">
+                        <p className="eyebrow flex items-center gap-1">
                           <Landmark size={12} /> {scheme.authority}
                         </p>
                         <h3 className="font-bold text-text-primary leading-tight mt-0.5">{scheme.name}</h3>

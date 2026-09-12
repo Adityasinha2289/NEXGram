@@ -61,8 +61,8 @@ export function OpportunitiesList() {
             <CardContent className="p-4 flex flex-col gap-3">
               <div className="flex justify-between items-start gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs text-text-muted uppercase font-bold tracking-wider mb-0.5">{opp.category}</p>
-                  <h4 className="font-bold text-md text-text-primary leading-tight">{opp.name}</h4>
+                  <p className="eyebrow mb-0.5">{opp.category}</p>
+                  <h4 className="font-bold text-base text-text-primary leading-tight">{opp.name}</h4>
                   {opp.area && (
                     <p className="text-xs text-text-muted mt-1 flex items-center gap-1">
                       <MapPin size={12} /> {opp.area}

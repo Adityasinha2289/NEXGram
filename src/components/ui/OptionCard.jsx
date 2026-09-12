@@ -23,7 +23,7 @@ export function OptionCard({
             </div>
           )}
           <div>
-            <h4 className="font-bold text-md">{title}</h4>
+            <h4 className="font-bold text-base">{title}</h4>
             {description && <p className="text-sm text-text-muted mt-1">{description}</p>}
           </div>
         </div>

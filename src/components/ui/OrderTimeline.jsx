@@ -75,7 +75,7 @@ export function OrderTimeline({ history = [], currentStatus }) {
   return (
     <Card className="border-border">
       <CardContent className="p-4">
-        <h3 className="font-bold text-md text-text-primary mb-4">Order Kahan Hai?</h3>
+        <h3 className="font-bold text-base text-text-primary mb-4">Order Kahan Hai?</h3>
         <ol className="flex flex-col">
           {rows.map((row, index) => {
             const style = STATE_STYLES[row.state];

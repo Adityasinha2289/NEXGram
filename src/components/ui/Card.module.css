@@ -1,53 +1,79 @@
-.card {
-  background-color: var(--color-surface);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
+/*
+ * Wrapped in @layer components so a utility class passed through `className`
+ * can still override it. Unlayered, these rules outranked every Tailwind
+ * utility regardless of specificity, which silently discarded the p-0 and p-4
+ * that callers were passing to Card, Button and Input.
+ */
+@layer components {
+  /*
+   * Flat by default.
+   *
+   * Every card in the app used to carry a shadow, which meant nothing stood out
+   * because everything did. Separation comes from the border; `elevated` is for
+   * the one thing on a screen that genuinely sits above the page.
+   */
+  .card {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
 
-.interactive {
-  cursor: pointer;
-}
+  .elevated {
+    box-shadow: var(--shadow-md);
+  }
 
-.interactive:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-}
+  .interactive {
+    cursor: pointer;
+  }
 
-.header {
-  padding: var(--spacing-lg);
-  border-bottom: 1px solid var(--color-surface-muted);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
+  .interactive:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-sm);
+  }
 
-.headerContent {
-  flex: 1;
-}
+  .header {
+    padding: var(--spacing-md) var(--spacing-md) 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
 
-.title {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
-  line-height: 1.2;
-}
+  .headerContent {
+    flex: 1;
+    min-width: 0;
+  }
 
-.content {
-  padding: var(--spacing-lg);
-  flex: 1;
-}
+  .title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+    margin: 0;
+    line-height: 1.3;
+  }
 
-.footer {
-  padding: var(--spacing-lg);
-  background-color: var(--color-surface-muted);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
+  .content {
+    padding: var(--spacing-md);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .footer {
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  /* Corners have to be clipped only when something inside paints to the edge —
+     a divided list, an image. Clipping unconditionally cut off focus rings. */
+  .clip {
+    overflow: hidden;
+  }
 }

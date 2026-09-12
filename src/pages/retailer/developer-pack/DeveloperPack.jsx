@@ -39,7 +39,7 @@ export function DeveloperPack() {
       <header>
         <h2 className="text-2xl font-bold text-text-primary leading-tight">Your Developer Pack</h2>
         <p className="text-sm text-text-muted mt-1">Aapke business, requirements aur area ke hisaab se suggested products.</p>
-        <p className="text-[10px] uppercase font-bold text-primary tracking-wider mt-2">Based on your business profile & current requirements</p>
+        <p className="eyebrow text-primary mt-2">Based on your business profile & current requirements</p>
       </header>
 
       <div className="flex flex-col md:flex-row gap-6 items-start">
