@@ -8,16 +8,30 @@ import { Input } from './Input';
  * component driven by different field lists, rather than two near-identical
  * pages that drift apart.
  */
+function Label({ htmlFor, children }) {
+  return (
+    <label className="text-sm font-medium text-text-secondary" htmlFor={htmlFor}>
+      {children}
+    </label>
+  );
+}
+
+function Hint({ hint, error, id }) {
+  if (error) return <p className="text-xs text-danger" id={id}>{error}</p>;
+  if (hint) return <p className="text-xs text-text-muted">{hint}</p>;
+  return null;
+}
+
 export function Field({ field, value, onChange, error }) {
   const { key, label, type, options = [], placeholder, hint } = field;
 
   if (type === 'select') {
     return (
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-bold text-text-primary ml-1" htmlFor={key}>{label}</label>
+      <div className="flex flex-col gap-1">
+        <Label htmlFor={key}>{label}</Label>
         <select
           id={key}
-          className="w-full bg-surface border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none"
+          className="h-[42px] w-full cursor-pointer rounded-md border border-border-strong bg-surface px-3 text-text-primary transition-colors hover:border-text-faint focus:border-primary focus:outline-none"
           value={value ?? ''}
           onChange={(e) => onChange(key, e.target.value)}
         >
@@ -28,24 +42,22 @@ export function Field({ field, value, onChange, error }) {
             </option>
           ))}
         </select>
-        {hint && <p className="text-xs text-text-muted ml-1">{hint}</p>}
-        {error && <p className="text-xs text-danger ml-1">{error}</p>}
+        <Hint hint={hint} error={error} id={`${key}-hint`} />
       </div>
     );
   }
 
   if (type === 'multiselect') {
     const selected = Array.isArray(value) ? value : [];
-    const toggle = (option) =>
-      onChange(
-        key,
-        selected.includes(option) ? selected.filter((v) => v !== option) : [...selected, option],
-      );
+    const toggle = (option) => onChange(
+      key,
+      selected.includes(option) ? selected.filter((v) => v !== option) : [...selected, option],
+    );
 
     return (
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-bold text-text-primary ml-1">{label}</label>
-        <div className="flex flex-wrap gap-2">
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-sm font-medium text-text-secondary">{label}</legend>
+        <div className="flex flex-wrap gap-1.5">
           {options.map((option) => {
             const optionValue = option.value ?? option;
             const isOn = selected.includes(optionValue);
@@ -55,38 +67,36 @@ export function Field({ field, value, onChange, error }) {
                 type="button"
                 onClick={() => toggle(optionValue)}
                 aria-pressed={isOn}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium border transition-colors ${
+                className={`flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors ${
                   isOn
-                    ? 'bg-primary text-text-inverse border-primary'
-                    : 'bg-surface text-text-secondary border-border hover:border-primary'
+                    ? 'border-primary bg-primary text-text-inverse'
+                    : 'border-border bg-surface text-text-secondary hover:border-border-strong hover:bg-surface-muted'
                 }`}
               >
-                {isOn && <Check size={14} />}
+                {isOn && <Check size={13} strokeWidth={2.5} />}
                 {option.label ?? option}
               </button>
             );
           })}
         </div>
-        {hint && <p className="text-xs text-text-muted ml-1">{hint}</p>}
-        {error && <p className="text-xs text-danger ml-1">{error}</p>}
-      </div>
+        <Hint hint={hint} error={error} id={`${key}-hint`} />
+      </fieldset>
     );
   }
 
   if (type === 'textarea') {
     return (
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-bold text-text-primary ml-1" htmlFor={key}>{label}</label>
+      <div className="flex flex-col gap-1">
+        <Label htmlFor={key}>{label}</Label>
         <textarea
           id={key}
           rows={3}
-          className="w-full bg-surface border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-y"
+          className="w-full resize-y rounded-md border border-border-strong bg-surface px-3 py-2.5 leading-relaxed text-text-primary transition-colors placeholder:text-text-faint hover:border-text-faint focus:border-primary focus:outline-none"
           placeholder={placeholder}
           value={value ?? ''}
           onChange={(e) => onChange(key, e.target.value)}
         />
-        {hint && <p className="text-xs text-text-muted ml-1">{hint}</p>}
-        {error && <p className="text-xs text-danger ml-1">{error}</p>}
+        <Hint hint={hint} error={error} id={`${key}-hint`} />
       </div>
     );
   }

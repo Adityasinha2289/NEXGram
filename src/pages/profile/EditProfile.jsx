@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Info } from 'lucide-react';
+import { AlertCircle, Check } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Card, CardContent } from '../../components/ui/Card';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { Field } from '../../components/ui/FieldGroup';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Section } from '../../components/ui/Section';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import { categoriesApi } from '../../services/api/categoriesApi';
 import { intelligenceApi } from '../../services/api/intelligenceApi';
@@ -216,43 +217,66 @@ export function EditProfile() {
     }
   };
 
-  if (isLoading || !values) return <LoadingSpinner />;
+  if (isLoading || !values) {
+    return (
+      <div className="flex flex-col gap-5">
+        <Skeleton className="h-8 w-[55%] max-w-[300px]" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+      </div>
+    );
+  }
+
   if (error && !isSaving) return <ErrorState description={error} onRetry={() => setError(null)} />;
 
   return (
-    <div className="flex flex-col gap-5 pb-28 animate-fade-in">
-      <header>
-        <h2 className="text-2xl font-bold text-text-primary leading-tight">Profile Edit Karein</h2>
-        <p className="text-sm text-text-muted mt-1">
-          Yeh details hi aapke liye signals aur recommendations banati hain.
-        </p>
-      </header>
+    <form
+      onSubmit={(event) => { event.preventDefault(); save(); }}
+      className="flex animate-fade-in flex-col gap-6"
+    >
+      <PageHeader
+        eyebrow="Profile"
+        title="Profile edit karein"
+        description="Yeh details hi aapke liye signals aur recommendations banati hain — isliye inhe sahi rakhna seedha aapke suggestions ko behtar karta hai."
+      />
 
       {fields.map((group) => (
-        <Card key={group.section} className="border-border">
-          <CardContent className="p-4 flex flex-col gap-4">
-            <div>
-              <h3 className="font-bold text-base text-text-primary">{group.section}</h3>
-              {group.hint && (
-                <p className="text-xs text-text-muted mt-0.5 flex items-start gap-1">
-                  <Info size={12} className="mt-0.5 flex-shrink-0" /> {group.hint}
-                </p>
-              )}
-            </div>
+        <Section key={group.section} title={group.section} description={group.hint}>
+          <div className="panel flex flex-col gap-4 p-4">
             {group.items.map((field) => (
               <Field key={field.key} field={field} value={values[field.key]} onChange={change} />
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </Section>
       ))}
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-lg bg-danger-bg px-3 py-2.5 text-sm leading-snug text-danger"
+        >
+          <AlertCircle size={16} className="mt-0.5 flex-shrink-0" strokeWidth={2} />
+          {error}
+        </p>
+      )}
 
-      <div className="fixed bottom-[70px] left-0 right-0 mx-auto max-w-[1024px] p-4 bg-surface border-t border-border z-[60] md:static md:bg-transparent md:border-0 md:p-0">
-        <Button fullWidth onClick={save} disabled={isSaving} icon={saved ? Check : undefined}>
-          {isSaving ? 'Save ho raha hai...' : saved ? 'Save ho gaya' : 'Changes Save Karein'}
-        </Button>
+      {/*
+       * Sticky rather than fixed. Fixed meant a hard-coded 1024px width and a
+       * hard-coded offset for the phone's bottom bar, and on a short form it
+       * floated over blank page instead of sitting at the end of the fields.
+       */}
+      <div className="sticky bottom-[calc(var(--bottom-nav-height)+12px)] z-10 md:bottom-4">
+        <div className="panel flex items-center gap-3 p-3 shadow-lg">
+          <Button
+            type="submit"
+            fullWidth
+            isLoading={isSaving}
+            icon={saved ? Check : undefined}
+          >
+            {saved ? 'Save ho gaya' : 'Changes save karein'}
+          </Button>
+        </div>
       </div>
-    </div>
+    </form>
   );
 }

@@ -3,11 +3,18 @@ import { useLocation } from 'react-router-dom';
 import { PackageOpen, Plus } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
+import { ErrorState } from '../../../components/ui/ErrorState';
+import { List } from '../../../components/ui/List';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { SkeletonList } from '../../../components/ui/Skeleton';
+import { Stat, StatGroup } from '../../../components/ui/Stat';
 
 import { useCatalogue } from './hooks/useCatalogue';
-import { ProductCard } from './components/ProductCard';
+import { ProductRow } from './components/ProductRow';
 import { ProductForm } from './components/ProductForm';
 import { CatalogueFilters } from './components/CatalogueFilters';
+
+const rupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
 export function Catalogue() {
   const {
@@ -23,7 +30,7 @@ export function Catalogue() {
     error,
     addProduct,
     updateProduct,
-    removeProduct
+    removeProduct,
   } = useCatalogue();
 
   const location = useLocation();
@@ -74,72 +81,55 @@ export function Catalogue() {
     handleCloseForm();
   };
 
-  const handleRemove = async (id) => {
-    if (!window.confirm("Is product ko catalogue se remove karna hai?")) return;
-    try {
-      await removeProduct(id);
-    } catch (err) {
-      console.error('Failed to remove catalogue item:', err);
-    }
-  };
-
   if (isLoading) {
-    return <div className="flex justify-center items-center h-full p-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+    return (
+      <div className="flex flex-col gap-6">
+        <SkeletonList rows={5} />
+      </div>
+    );
   }
 
-  if (error) {
-    return <div className="p-12"><EmptyState title="Error Loading Catalogue" description={error} /></div>;
-  }
+  if (error) return <ErrorState title="Catalogue load nahi hui" description={error} />;
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in pb-24 h-full relative">
-      
-      {/* Header */}
-      <header className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-text-primary">Meri Catalogue</h2>
-          <p className="text-sm text-text-muted mt-1">Jo products aap supply karte ho unhe yahan manage karein.</p>
-        </div>
-        <Button onClick={handleOpenAdd} size="sm" icon={Plus} className="flex-shrink-0 hidden sm:flex">
-          Product Add Karo
-        </Button>
-      </header>
+    <div className="flex animate-fade-in flex-col gap-5">
+      <PageHeader
+        eyebrow="Stock"
+        title="Meri catalogue"
+        description="Jo products aap supply karte hain, unka daam aur stock yahaan se manage karein."
+        action={
+          <Button icon={Plus} onClick={handleOpenAdd}>
+            Product add karo
+          </Button>
+        }
+      />
 
-      {/* Summary */}
-      {allProductsCount > 0 && (
-        <div className="flex items-center gap-4 py-2 border-y border-border">
-          <div className="flex-1 text-center">
-            <p className="text-xl font-bold text-primary">{summary.totalProducts}</p>
-            <p className="text-xs text-text-muted">Products</p>
-          </div>
-          <div className="w-px h-8 bg-border"></div>
-          <div className="flex-1 text-center">
-            <p className="text-xl font-bold text-text-primary">{summary.totalCategories}</p>
-            <p className="text-xs text-text-muted">Categories</p>
-          </div>
-          <div className="w-px h-8 bg-border"></div>
-          <div className="flex-1 text-center">
-            <p className="text-xl font-bold text-text-primary">₹{summary.lowestMOQ}</p>
-            <p className="text-xs text-text-muted">Start MOQ</p>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content Area */}
       {allProductsCount === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <EmptyState 
-            icon={PackageOpen}
-            title="Abhi catalogue empty hai" 
-            description="Apne products add karke retailers ko dikhana shuru karein." 
-            actionLabel="+ Product Add Karo"
-            onAction={handleOpenAdd}
-          />
-        </div>
+        <EmptyState
+          icon={PackageOpen}
+          title="Catalogue abhi khaali hai"
+          description="Apne products add karke retailers ko dikhana shuru karein. Jo aapke area mein maanga ja raha hai, woh Signals mein dikhta hai."
+          actionLabel="Pehla product add karein"
+          onAction={handleOpenAdd}
+        />
       ) : (
         <>
-          {/* Filters */}
-          <CatalogueFilters 
+          <StatGroup>
+            <Stat label="Products" value={summary.totalProducts} />
+            <Stat label="Categories" value={summary.totalCategories} />
+            {/*
+             * This is minimum quantity times price — the cheapest first order a
+             * retailer can place with you, not an MOQ. It was labelled "Start
+             * MOQ" and printed with a rupee sign in front of a pack count.
+             */}
+            <Stat
+              label="Min order"
+              value={rupees(summary.lowestMOQ)}
+              caption="MOQ × price, sabse sasta"
+            />
+          </StatGroup>
+
+          <CatalogueFilters
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             categories={categories}
@@ -147,40 +137,37 @@ export function Catalogue() {
             setSelectedCategory={setSelectedCategory}
           />
 
-          {/* List */}
           {products.length === 0 ? (
-            <div className="mt-8">
-              <EmptyState 
-                title="Is naam ka koi product nahi mila." 
-                actionLabel="Search Clear Karo"
-                onAction={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('All');
-                }}
-              />
-            </div>
+            <EmptyState
+              title="Is naam ka koi product nahi mila"
+              description="Search ya category badal kar dekhiye."
+              actionLabel="Filter hatayein"
+              onAction={() => {
+                setSearchQuery('');
+                setSelectedCategory('All');
+              }}
+            />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {products.map(product => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
+            <List>
+              {products.map((product) => (
+                <ProductRow
+                  key={product.id}
+                  product={product}
                   onEdit={handleOpenEdit}
-                  onRemove={handleRemove}
+                  onRemove={removeProduct}
                 />
               ))}
-            </div>
+            </List>
           )}
         </>
       )}
 
-      {/* Modal Form */}
       {isFormOpen && (
-        <ProductForm 
+        <ProductForm
           prefill={prefill}
-          initialData={editingProduct} 
-          onSubmit={handleSubmitForm} 
-          onCancel={handleCloseForm} 
+          initialData={editingProduct}
+          onSubmit={handleSubmitForm}
+          onCancel={handleCloseForm}
         />
       )}
     </div>

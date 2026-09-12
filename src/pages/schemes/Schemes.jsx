@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Check, ExternalLink, FileText, Info, Landmark, X } from 'lucide-react';
-import { Card, CardContent } from '../../components/ui/Card';
+import { Check, ChevronDown, ExternalLink, FileText, Info, Landmark, X } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ErrorState } from '../../components/ui/ErrorState';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import { schemesApi } from '../../services/api/schemesApi';
 import { useApiResource } from '../../hooks/useApiResource';
 
@@ -32,117 +32,140 @@ export function Schemes() {
     if (data?.schemes?.length) setOpenId((current) => current ?? data.schemes[0].id);
   }, [data]);
 
-  if (isLoading) return <LoadingSpinner />;
-  if (error) return <ErrorState description={error} onRetry={reload} />;
-
   const schemes = data?.schemes || [];
 
   return (
-    <div className="flex flex-col gap-5 pb-6 animate-fade-in">
-      <header>
-        <h2 className="text-2xl font-bold text-text-primary leading-tight">Sarkari Schemes</h2>
-        <p className="text-sm text-text-muted mt-1">
-          Aapke profile ke hisaab se {schemes.length} schemes ka criteria match.
-        </p>
-      </header>
+    <div className="flex animate-fade-in flex-col gap-5">
+      <PageHeader
+        eyebrow="Sarkari schemes"
+        title="Aapke liye kaun si scheme"
+        description={
+          isLoading
+            ? 'Aapke profile se match kiya ja raha hai.'
+            : `Aapke profile ke hisaab se ${schemes.length} scheme${schemes.length === 1 ? '' : 's'} ka criteria dekha gaya.`
+        }
+      />
 
-      <Card className="bg-warning-bg border-warning">
-        <CardContent className="p-3 flex gap-2 items-start">
-          <Info size={16} className="text-warning flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-text-secondary leading-snug">
-            Yeh eligibility ka final faisla nahi hai. Hum sirf aapke diye gaye profile ko
-            scheme ke stated criteria se match karte hain. Confirm official portal par karein.
-          </p>
-        </CardContent>
-      </Card>
+      {/*
+       * The disclaimer sits above the results rather than in a card competing
+       * with them. It is the most important sentence on the page and also the
+       * one nobody wants to read, so it is short and it is first.
+       */}
+      <p className="flex items-start gap-2.5 rounded-lg border border-warning/25 bg-warning-bg px-3.5 py-3 text-sm leading-snug text-text-secondary">
+        <Info size={16} className="mt-0.5 flex-shrink-0 text-warning" strokeWidth={2} />
+        Yeh eligibility ka final faisla nahi hai. Hum sirf aapke diye gaye profile ko scheme ke
+        stated criteria se match karte hain — confirm official portal par karein.
+      </p>
 
-      {schemes.length === 0 ? (
+      {error ? (
+        <ErrorState description={error} onRetry={reload} />
+      ) : isLoading ? (
+        <SkeletonList rows={4} />
+      ) : schemes.length === 0 ? (
         <EmptyState
-          title="Koi scheme nahi mili"
+          icon={Landmark}
+          title="Koi scheme match nahi hui"
           description="Profile poora karein taaki hum aapke liye schemes match kar sakein."
         />
       ) : (
-        <div className="flex flex-col gap-3">
+        <ul className="panel divide-y divide-border overflow-hidden">
           {schemes.map((scheme) => {
             const isOpen = openId === scheme.id;
             return (
-              <Card key={scheme.id} className="border-border overflow-hidden">
-                <CardContent className="p-0">
-                  <button
-                    onClick={() => setOpenId(isOpen ? null : scheme.id)}
-                    aria-expanded={isOpen}
-                    className="w-full text-left p-4 flex flex-col gap-2 hover:bg-surface-muted transition-colors"
-                  >
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="min-w-0">
-                        <p className="eyebrow flex items-center gap-1">
-                          <Landmark size={12} /> {scheme.authority}
-                        </p>
-                        <h3 className="font-bold text-text-primary leading-tight mt-0.5">{scheme.name}</h3>
-                      </div>
-                      <Badge variant={scheme.verdictVariant} className="flex-shrink-0">
-                        {scheme.metCount}/{scheme.totalCount}
-                      </Badge>
+              <li key={scheme.id}>
+                <button
+                  type="button"
+                  onClick={() => setOpenId(isOpen ? null : scheme.id)}
+                  aria-expanded={isOpen}
+                  className="flex w-full items-start gap-4 px-4 py-3.5 text-left transition-colors hover:bg-surface-muted"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="eyebrow flex items-center gap-1.5">
+                      <Landmark size={11} strokeWidth={2.25} /> {scheme.authority}
+                    </p>
+                    <h3 className="mt-1 text-sm font-semibold leading-snug text-text-primary">
+                      {scheme.name}
+                    </h3>
+                    <p className="mt-1 max-w-[62ch] text-sm leading-snug text-text-muted">
+                      {scheme.summary}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className="text-sm font-semibold text-primary">{scheme.benefit}</span>
+                      <span className="text-2xs text-text-muted">{scheme.verdict}</span>
                     </div>
-                    <p className="text-sm text-text-muted leading-snug">{scheme.summary}</p>
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className="font-bold text-primary text-sm">{scheme.benefit}</span>
-                      <span className="text-xs text-text-muted">{scheme.verdict}</span>
-                    </div>
-                  </button>
+                  </div>
 
-                  {isOpen && (
-                    <div className="px-4 pb-4 flex flex-col gap-4 border-t border-border pt-3">
-                      <div className="flex flex-col gap-2">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-text-muted">Criteria</h4>
-                        {scheme.checks.map((check) => {
-                          const state = CHECK_STATE[check.status] || CHECK_STATE.self_declare;
-                          const Icon = state.icon;
-                          return (
-                            <div key={check.label} className="flex items-start gap-2">
-                              <Icon size={15} className={`${state.className} flex-shrink-0 mt-0.5`} />
-                              <div className="min-w-0">
-                                <p className="text-sm text-text-primary leading-snug">{check.label}</p>
-                                <p className="text-xs text-text-muted leading-snug">{check.reason}</p>
-                              </div>
+                  <div className="flex flex-shrink-0 items-center gap-2">
+                    <Badge variant={scheme.verdictVariant} dot>
+                      {scheme.metCount}/{scheme.totalCount}
+                    </Badge>
+                    <ChevronDown
+                      size={16}
+                      strokeWidth={2.25}
+                      className={`text-text-faint transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      aria-hidden="true"
+                    />
+                  </div>
+                </button>
+
+                {isOpen && (
+                  <div className="flex flex-col gap-5 border-t border-border bg-surface-muted px-4 py-4">
+                    <div className="flex flex-col gap-2.5">
+                      <h4 className="eyebrow">Criteria</h4>
+                      {scheme.checks.map((check) => {
+                        const state = CHECK_STATE[check.status] || CHECK_STATE.self_declare;
+                        const Icon = state.icon;
+                        return (
+                          <div key={check.label} className="flex items-start gap-2.5">
+                            <Icon
+                              size={15}
+                              strokeWidth={2.5}
+                              className={`mt-0.5 flex-shrink-0 ${state.className}`}
+                              aria-label={state.label}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-sm leading-snug text-text-primary">
+                                {check.label}
+                              </p>
+                              <p className="text-2xs leading-snug text-text-muted">
+                                {check.reason}
+                              </p>
                             </div>
-                          );
-                        })}
-                      </div>
-
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                          Documents chahiye
-                        </h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {scheme.documents.map((doc) => (
-                            <span
-                              key={doc}
-                              className="text-xs bg-surface-muted text-text-secondary px-2 py-1 rounded-md flex items-center gap-1"
-                            >
-                              <FileText size={11} /> {doc}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <p className="text-xs text-text-muted italic leading-snug">{scheme.disclaimer}</p>
-
-                      <a
-                        href={scheme.applyAt}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-primary text-text-inverse font-medium text-sm hover:bg-primary-hover transition-colors"
-                      >
-                        Official portal par jaayein <ExternalLink size={15} />
-                      </a>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+
+                    <div>
+                      <h4 className="eyebrow mb-2">Documents chahiye</h4>
+                      <ul className="flex flex-wrap gap-1.5">
+                        {scheme.documents.map((doc) => (
+                          <li
+                            key={doc}
+                            className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-2xs text-text-secondary"
+                          >
+                            <FileText size={11} strokeWidth={2} /> {doc}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <p className="text-2xs leading-snug text-text-muted">{scheme.disclaimer}</p>
+
+                    <a
+                      href={scheme.applyAt}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-11 items-center justify-center gap-2 rounded-md bg-primary text-sm font-semibold text-text-inverse transition-colors hover:bg-primary-hover"
+                    >
+                      Official portal par jayein <ExternalLink size={15} strokeWidth={2} />
+                    </a>
+                  </div>
+                )}
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );
