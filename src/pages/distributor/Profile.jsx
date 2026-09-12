@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Store, MapPin, Truck, Package, User } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -7,6 +8,7 @@ import { APP_CONSTANTS } from '../../constants/appConstants';
 import { Models } from '../../data/models';
 
 export function Profile() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export function Profile() {
           <h2 className="text-2xl font-bold text-text-primary leading-tight">Mera Profile</h2>
           <p className="text-sm text-text-muted mt-1">Aapke distribution business ki details.</p>
         </div>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={() => navigate('/distributor/profile/edit')}>
           Profile Edit Karo
         </Button>
       </header>

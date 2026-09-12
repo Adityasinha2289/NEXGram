@@ -28,7 +28,9 @@ export function Register() {
       setIsLoading(true);
       setError(null);
       await register(formData);
-      navigate(formData.role === 'retailer' ? '/retailer/dashboard' : '/distributor/dashboard');
+      // Onboarding is where demand and catalogue signals are captured, so a new
+      // account goes there first; RequireOnboarding keeps them there until done.
+      navigate(`/${formData.role}/onboarding`);
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {

@@ -23,7 +23,7 @@ export function CatalogueFilters({
           <button
             key={category}
             onClick={() => setSelectedCategory(category)}
-            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               selectedCategory === category 
                 ? 'bg-primary text-text-inverse shadow-sm' 
                 : 'bg-surface border border-border text-text-muted hover:bg-surface-muted'

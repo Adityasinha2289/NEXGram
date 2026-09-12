@@ -1,8 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Sparkles, CheckCircle2 } from 'lucide-react';
-import { SUPPLY_GAP_CATALOGUES_MOCK } from '../../../data/supplyGapTestMock';
-import { DISTRIBUTORS_LIST_MOCK } from '../../../data/distributorDiscoveryMock'; // Keep for engine fallback
-import { DistributorMatchingEngine } from '../../../features/intelligence/services/DistributorMatchingEngine';
 import { PackContextCard } from './components/PackContextCard';
 import { DistributorFilters } from './components/DistributorFilters';
 import { DistributorCard } from './components/DistributorCard';
@@ -10,11 +7,13 @@ import { EmptyState } from '../../../components/ui/EmptyState';
 import { Badge } from '../../../components/ui/Badge';
 import { distributorsApi } from '../../../services/api/distributorsApi';
 import { useAuth } from '../../../context/AuthContext';
+import { useDeveloperPack } from '../developer-pack/hooks/useDeveloperPack';
 
 export function DistributorDiscovery() {
   const { profile } = useAuth();
-  const [packItems, setPackItems] = useState([]);
-  const [retailerProfile, setRetailerProfile] = useState(null);
+  // Matching is computed with the plan, server-side, so this page can never
+  // rank suppliers differently from the plan that sent the user here.
+  const { packItems, distributorMatches } = useDeveloperPack();
   const [locationStr, setLocationStr] = useState('Area, District');
   
   // API State
@@ -28,23 +27,9 @@ export function DistributorDiscovery() {
   const [sortBy, setSortBy] = useState('Recommended');
 
   useEffect(() => {
-    // Load Location & Profile
-    if (profile?.profile_data) {
-      const parsed = profile.profile_data;
-      setRetailerProfile(parsed);
-      if (parsed.location?.area && parsed.location?.district) {
-        setLocationStr(`${parsed.location.area}, ${parsed.location.district}`);
-      }
-    }
-
-    // Load Developer Pack
-    try {
-      const savedPack = localStorage.getItem('nexgram_retailer_developer_pack');
-      if (savedPack) {
-        setPackItems(JSON.parse(savedPack));
-      }
-    } catch (e) {
-      console.error('Failed to parse developer pack', e);
+    const parsed = profile?.profile_data;
+    if (parsed?.location?.area && parsed?.location?.district) {
+      setLocationStr(`${parsed.location.area}, ${parsed.location.district}`);
     }
   }, [profile]);
 
@@ -82,47 +67,26 @@ export function DistributorDiscovery() {
     fetchDistributors();
   }, [fetchDistributors]);
 
-  // Run Deterministic Matching Engine
-  const matchingData = useMemo(() => {
-    if (packItems.length === 0) return null;
-    
-    const developerPackPayload = {
-      retailerId: retailerProfile?.id || 'unknown',
-      retailerLocation: retailerProfile?.location || null,
-      products: packItems
-    };
+  const matchesById = useMemo(
+    () => new Map(distributorMatches.map(m => [m.distributorId, m])),
+    [distributorMatches],
+  );
 
-    // To prevent engine crash, we supply the original DISTRIBUTORS_LIST_MOCK to the engine 
-    // since SUPPLY_GAP_CATALOGUES_MOCK expects those specific mock IDs.
-    // This preserves intelligence determinism while we migrate the display layer.
-    return DistributorMatchingEngine.match(
-      developerPackPayload, 
-      SUPPLY_GAP_CATALOGUES_MOCK, 
-      DISTRIBUTORS_LIST_MOCK,
-      { limit: 5 }
-    );
-  }, [packItems, retailerProfile]);
+  const distributorsWithMatch = useMemo(
+    () => dbDistributors.map(dist => {
+      const match = matchesById.get(dist.id);
+      return {
+        ...dist,
+        packMatchCount: match?.productsFulfilled || 0,
+        packMatchPercent: match?.fulfilmentPercent || 0,
+        packEstimatedTotal: match?.estimatedTotal || 0,
+        distanceKm: match?.distanceKm ?? null,
+      };
+    }),
+    [dbDistributors, matchesById],
+  );
 
-  const bestMatch = matchingData?.bestMatch || null;
-
-  // Compute distributor pack match for the fetched list
-  const distributorsWithMatch = useMemo(() => {
-    return dbDistributors.map(dist => {
-      let matchCount = 0;
-      
-      if (matchingData) {
-        // Attempt name-based or ID-based fallback since DB IDs differ from Mock IDs
-        if (matchingData.bestMatch?.distributorId === dist.id || matchingData.bestMatch?.distributorName === dist.name) {
-          matchCount = matchingData.bestMatch.productsFulfilled;
-        } else {
-          const alt = matchingData.alternatives.find(a => a.distributorId === dist.id || a.distributorName === dist.name);
-          if (alt) matchCount = alt.productsFulfilled;
-        }
-      }
-      
-      return { ...dist, packMatchCount: matchCount };
-    });
-  }, [dbDistributors, matchingData]);
+  const bestMatch = distributorMatches[0] || null;
 
   // Apply Filters & Sort
   const filteredAndSorted = useMemo(() => {
@@ -143,8 +107,12 @@ export function DistributorDiscovery() {
 
     result.sort((a, b) => {
       if (sortBy === 'Most Pack Products') return b.packMatchCount - a.packMatchCount;
-      if (sortBy === 'Nearest') return 0; // Distance logic parsing skipped for DB strings
-      return 0; 
+      if (sortBy === 'Nearest') {
+        return (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity);
+      }
+      // Recommended: most of the plan covered, cheapest breaking the tie.
+      if (b.packMatchCount !== a.packMatchCount) return b.packMatchCount - a.packMatchCount;
+      return (a.packEstimatedTotal || Infinity) - (b.packEstimatedTotal || Infinity);
     });
 
     return result;

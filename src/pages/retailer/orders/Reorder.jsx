@@ -1,65 +1,42 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Plus, Check } from 'lucide-react';
+import { Package, Plus, Check, Clock } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
+import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
-import { storage } from '../../../utils/storage';
-import { APP_CONSTANTS } from '../../../constants/appConstants';
-import { INITIAL_ORDERS_MOCK } from '../../../data/ordersMock';
+import { ErrorState } from '../../../components/ui/ErrorState';
+import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
+import { intelligenceApi } from '../../../services/api/intelligenceApi';
 
 export function Reorder() {
   const navigate = useNavigate();
   const [reorderItems, setReorderItems] = useState([]);
-  const [currentPack, setCurrentPack] = useState([]);
+  const [addedIds, setAddedIds] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Load developer pack state
-    const pack = storage.get(APP_CONSTANTS.STORAGE_KEYS.DEVELOPER_PACK, []);
-    setCurrentPack(pack);
+  // Reorder candidates come from this shop's real order history, with the
+  // cadence measured from the gaps between their own past purchases.
+  const load = () => {
+    setIsLoading(true);
+    setError(null);
+    intelligenceApi.getReorderSuggestions()
+      .then(setReorderItems)
+      .catch(err => setError(err.message || 'Reorder list load nahi hui'))
+      .finally(() => setIsLoading(false));
+  };
 
-    // Load past orders and extract completed/confirmed products
-    const storedOrders = storage.get(APP_CONSTANTS.STORAGE_KEYS.RETAILER_ORDERS, []);
-    const combined = [...INITIAL_ORDERS_MOCK, ...storedOrders].filter(o => o.retailerId === 'RET_1');
-    
-    // Filter for valid past statuses
-    const validOrders = combined.filter(o => 
-      o.status === APP_CONSTANTS.ORDER_STATUSES.COMPLETED || 
-      o.status === APP_CONSTANTS.ORDER_STATUSES.CONFIRMED
-    );
-
-    // Extract items and deduplicate by item ID, keeping the most recent order's detail
-    const itemsMap = new Map();
-    validOrders.forEach(order => {
-      order.items.forEach(item => {
-        if (!itemsMap.has(item.id)) {
-          itemsMap.set(item.id, {
-            ...item,
-            lastOrderedDate: order.createdAt,
-            distributorName: order.distributorName,
-            orderId: order.id
-          });
-        }
-      });
-    });
-
-    setReorderItems(Array.from(itemsMap.values()));
-  }, []);
+  useEffect(load, []);
 
   const handleAddToPack = (item) => {
-    if (currentPack.some(p => p.id === item.id)) return;
-    
-    const newPack = [...currentPack, {
-      id: item.id,
-      name: item.name,
-      category: item.category || 'General', // Fallback if missing from order mock
-      unit: item.unit,
-      price: item.price
-    }];
-    
-    setCurrentPack(newPack);
-    storage.set(APP_CONSTANTS.STORAGE_KEYS.DEVELOPER_PACK, newPack);
+    if (addedIds.includes(item.id)) return;
+    setAddedIds(prev => [...prev, item.id]);
+    navigate(`/retailer/distributors/${item.distributorId}`);
   };
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorState description={error} onRetry={load} />;
 
   return (
     <div className="flex flex-col gap-5 pb-6 animate-fade-in">
@@ -79,14 +56,17 @@ export function Reorder() {
       ) : (
         <div className="flex flex-col gap-3">
           {reorderItems.map((item, index) => {
-            const inPack = currentPack.some(p => p.id === item.id);
+            const inPack = addedIds.includes(item.id);
             return (
               <Card key={`${item.id}-${index}`} className={`border-border ${inPack ? 'bg-primary/5 border-primary/20' : ''}`}>
                 <CardContent className="p-4 flex flex-col gap-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-bold text-md text-text-primary">{item.name}</h4>
+                      <h4 className="font-bold text-md text-text-primary">
+                        {item.name} <span className="text-text-muted font-medium text-sm">{item.variant}</span>
+                      </h4>
                       <p className="text-xs text-text-muted mt-0.5">Supplier: {item.distributorName}</p>
+                      {item.dueNow && <Badge variant="warning" className="mt-1.5 text-[10px]">Due now</Badge>}
                     </div>
                     <div className="text-right">
                       <span className="font-bold text-primary block">₹{item.price}</span>
@@ -95,8 +75,8 @@ export function Reorder() {
                   </div>
                   
                   <div className="flex items-center justify-between mt-1 pt-3 border-t border-border">
-                    <span className="text-xs text-text-muted">
-                      Last ordered: {new Date(item.lastOrderedDate).toLocaleDateString()}
+                    <span className="text-xs text-text-muted flex items-center gap-1">
+                      <Clock size={12} /> {item.suggestion}
                     </span>
                     
                     <Button 
@@ -107,7 +87,7 @@ export function Reorder() {
                       disabled={inPack}
                       className={inPack ? "text-success border-success/20 bg-success/5" : ""}
                     >
-                      {inPack ? "Pack mein hai" : "Pack Mein Add"}
+                      {inPack ? "Khula" : "Order Karo"}
                     </Button>
                   </div>
                 </CardContent>
@@ -117,18 +97,6 @@ export function Reorder() {
         </div>
       )}
 
-      {/* Floating Pack Summary */}
-      {currentPack.length > 0 && (
-        <div className="fixed bottom-20 left-4 right-4 z-10">
-          <div 
-            className="bg-primary text-text-inverse px-4 py-3 rounded-lg shadow-lg flex justify-between items-center cursor-pointer hover:bg-primary-dark transition-colors" 
-            onClick={() => navigate('/retailer/developer-pack')}
-          >
-            <span className="text-sm font-medium">Developer Pack: {currentPack.length} items</span>
-            <span className="text-xs font-bold uppercase tracking-wider">Pack Dekho &rarr;</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

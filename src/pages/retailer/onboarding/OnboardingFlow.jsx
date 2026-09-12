@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { intelligenceApi } from '../../../services/api/intelligenceApi';
 import { profilesApi } from '../../../services/api/profilesApi';
 import { OnboardingShell } from '../../../components/ui/OnboardingShell';
 
@@ -73,7 +74,15 @@ export function OnboardingFlow() {
         setCurrentStep(prev => prev + 1);
         window.scrollTo(0, 0);
       } else {
-        // Final submission completed
+        // What this shop just reported is now part of the local signal, so
+        // recompute before landing on the dashboard. A failure here must not
+        // strand the user mid-onboarding: the pipeline is idempotent and any
+        // later refresh picks the signal up.
+        try {
+          await intelligenceApi.refresh();
+        } catch (err) {
+          console.warn('Intelligence refresh failed; signal will be picked up on the next run.', err);
+        }
         navigate('/retailer/dashboard');
       }
     } catch (err) {

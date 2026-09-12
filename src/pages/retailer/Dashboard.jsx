@@ -1,58 +1,45 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PackageOpen, MapPin, TrendingUp, HeartPulse, Sparkles, Store, Clock, ArrowRight, Truck } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { useAuth } from '../../context/AuthContext';
-import { RETAILER_DASHBOARD_MOCK } from '../../data/retailerMock';
-import { DemandEngine } from '../../features/intelligence/services/DemandEngine';
-import { DEMAND_TEST_MOCK } from '../../data/demandTestMock';
-import { SupplyGapEngine } from '../../features/intelligence/services/SupplyGapEngine';
-import { SUPPLY_GAP_CATALOGUES_MOCK } from '../../data/supplyGapTestMock';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { ErrorState } from '../../components/ui/ErrorState';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { useDashboard } from '../../hooks/useDashboard';
+
+const formatRupees = (value) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
 export function RetailerDashboard() {
   const navigate = useNavigate();
-  const { businessSnapshot, developerPack, recommendedProducts, reorderItems, nearbyDistributors } = RETAILER_DASHBOARD_MOCK;
-  
-  const { profile } = useAuth();
-  
-  const [userData, setUserData] = useState({
-    name: RETAILER_DASHBOARD_MOCK.fallbackName,
-    location: RETAILER_DASHBOARD_MOCK.fallbackLocation,
-    businessType: ''
-  });
+  const { data, isLoading, error, reload } = useDashboard('retailer');
 
-  useEffect(() => {
-    // DEV INTEGRATION: Run Intelligence Engines purely for developer verification
-    const demandSignals = DemandEngine.analyze(DEMAND_TEST_MOCK);
-    const gapSignals = SupplyGapEngine.analyze(demandSignals, SUPPLY_GAP_CATALOGUES_MOCK);
-    
-    console.log("[DEV INTELLIGENCE] Demand Engine Output:", demandSignals);
-    console.log("[DEV INTELLIGENCE] Supply Gap Engine Output:", gapSignals);
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorState description={error} onRetry={reload} />;
+  if (!data) return null;
 
-    if (profile?.profile_data) {
-      const parsed = profile.profile_data;
-      setUserData({
-        name: profile.name || RETAILER_DASHBOARD_MOCK.fallbackName,
-        location: parsed.location?.district && parsed.location?.area 
-          ? `${parsed.location.area}, ${parsed.location.district}`
-          : RETAILER_DASHBOARD_MOCK.fallbackLocation,
-        businessType: parsed.businessType || ''
-      });
-    }
-  }, [profile]);
+  const {
+    businessName,
+    location,
+    snapshot: businessSnapshot,
+    developerPack,
+    recommendedProducts,
+    reorderItems,
+    nearbyDistributors,
+  } = data;
+
+  const displayLocation = [location.area, location.district].filter(Boolean).join(', ') || 'Aapka Area';
 
   return (
     <div className="flex flex-col gap-6 pb-6 animate-fade-in">
       
       {/* 1. HEADER / GREETING */}
       <header>
-        <h2 className="text-2xl font-bold text-text-primary leading-tight">Namaste, {userData.name}</h2>
+        <h2 className="text-2xl font-bold text-text-primary leading-tight">Namaste, {businessName}</h2>
         <p className="text-text-muted mt-1 text-sm">Aapke business ke liye aaj kya useful hai?</p>
         <div className="flex items-center gap-1 text-sm font-medium text-primary mt-2">
           <MapPin size={16} />
-          <span>{userData.location}</span>
+          <span>{displayLocation}</span>
         </div>
       </header>
 
@@ -75,18 +62,26 @@ export function RetailerDashboard() {
 
             <div className="bg-surface border border-border/50 rounded-lg p-3">
               <p className="font-bold text-sm text-text-primary mb-2 border-b border-border/50 pb-2">{developerPack.title}</p>
-              <ul className="flex flex-col gap-1.5 text-sm">
-                {developerPack.items.map((item, i) => (
-                  <li key={i} className="flex justify-between text-text-primary">
-                    <span>{item.name}</span>
-                    <span className="font-medium text-text-muted">{item.qty}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-3 pt-2 border-t border-border/50 flex justify-between items-center font-bold">
-                <span className="text-sm text-text-muted">Estimated Total:</span>
-                <span className="text-primary">{developerPack.estimatedTotal}</span>
-              </div>
+              {developerPack.items.length === 0 ? (
+                <p className="text-sm text-text-muted">
+                  Abhi aapke area mein koi local supplier available nahi hai. Profile complete karke dobara dekhein.
+                </p>
+              ) : (
+                <>
+                  <ul className="flex flex-col gap-1.5 text-sm">
+                    {developerPack.items.map(item => (
+                      <li key={item.id} className="flex justify-between text-text-primary">
+                        <span>{item.name} <span className="text-text-muted">{item.variant}</span></span>
+                        <span className="font-medium text-text-muted">{item.suggestedQuantity} &times; {item.variant || item.unit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-3 pt-2 border-t border-border/50 flex justify-between items-center font-bold">
+                    <span className="text-sm text-text-muted">Estimated Total:</span>
+                    <span className="text-primary">{formatRupees(developerPack.estimatedTotal)}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             <Button fullWidth onClick={() => navigate('/retailer/developer-pack')} className="shadow-sm">
@@ -97,16 +92,44 @@ export function RetailerDashboard() {
         </Card>
       </section>
 
-      {/* 3. RECOMMENDED FOR YOUR AREA */}
+      {/* 3. REPORT UNMET DEMAND - the loop's entry point */}
+      <section>
+        <Card className="border-secondary/30 bg-secondary-light">
+          <CardContent className="p-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="font-bold text-md text-text-primary leading-tight">Kuch nahi mila customer ko?</h3>
+              <p className="text-sm text-text-secondary mt-0.5 leading-snug">
+                Batayein, aur aapke area ke distributors tak signal pahunche.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="flex-shrink-0"
+              onClick={() => navigate('/retailer/report-demand')}
+            >
+              Batayein
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* 4. RECOMMENDED FOR YOUR AREA */}
       <section>
         <div className="mb-3">
           <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
-            Recommended for {userData.businessType ? `your ${userData.businessType}` : 'Your Area'}
+            Recommended for Your Area
           </h3>
           <p className="text-sm text-text-muted">Nearby retailers ki demand aur local availability ke signals.</p>
         </div>
         
         <div className="flex flex-col gap-3">
+          {recommendedProducts.length === 0 && (
+            <EmptyState
+              title="Abhi koi signal nahi"
+              description="Aapke area se abhi tak itna demand data nahi aaya ki hum recommend kar sakein."
+            />
+          )}
           {recommendedProducts.map(product => (
             <Card key={product.id}>
               <CardContent className="p-4 flex items-center justify-between gap-3">
@@ -117,6 +140,10 @@ export function RetailerDashboard() {
                     <Badge variant={product.demandBadge} className="text-[10px]">Demand {product.demand}</Badge>
                     <Badge variant={product.availabilityBadge} className="text-[10px]">Supply {product.availability}</Badge>
                   </div>
+                  <p className="text-[11px] text-text-muted mt-1.5">
+                    {product.retailers} retailer signal{product.retailers === 1 ? '' : 's'} &middot;{' '}
+                    {product.suppliers === 0 ? 'koi local supplier nahi' : `${product.suppliers} local supplier`}
+                  </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => navigate('/retailer/distributors')} className="flex-shrink-0">
                   Details Dekho
@@ -140,6 +167,9 @@ export function RetailerDashboard() {
         </div>
         
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+          {reorderItems.length === 0 && (
+            <p className="text-sm text-text-muted">Abhi tak koi order nahi hua.</p>
+          )}
           {reorderItems.map(item => (
             <Card key={item.id} className="min-w-[160px] flex-shrink-0">
               <CardContent className="p-3 flex flex-col gap-2">
@@ -166,6 +196,9 @@ export function RetailerDashboard() {
         </div>
         
         <div className="flex flex-col gap-3">
+          {nearbyDistributors.length === 0 && (
+            <p className="text-sm text-text-muted">Aapke district mein abhi koi registered distributor nahi hai.</p>
+          )}
           {nearbyDistributors.map(dist => (
             <Card key={dist.id}>
               <CardContent className="p-4 flex flex-col gap-3">
@@ -236,6 +269,12 @@ export function RetailerDashboard() {
           </Button>
           <Button variant="outline" size="sm" className="bg-surface" onClick={() => navigate('/retailer/reorder')}>
             Dobara Order Karo
+          </Button>
+          <Button variant="outline" size="sm" className="bg-surface" onClick={() => navigate('/retailer/report-demand')}>
+            Kya Nahi Mila?
+          </Button>
+          <Button variant="outline" size="sm" className="bg-surface" onClick={() => navigate('/retailer/schemes')}>
+            Sarkari Schemes
           </Button>
         </div>
       </section>

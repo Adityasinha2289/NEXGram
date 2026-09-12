@@ -28,7 +28,13 @@ export function PackSummary({ packItems, totalEstimatedPrice, budget, budgetStat
             
             <div className="flex justify-between items-center pb-2 border-b border-border/50">
               <span className="text-text-muted text-sm">Your Budget</span>
-              <span className="font-medium text-text-primary">₹{budget.min.toLocaleString('en-IN')} – ₹{budget.max.toLocaleString('en-IN')}</span>
+              <span className="font-medium text-text-primary">
+                {budget?.max
+                  ? `₹${(budget.min || 0).toLocaleString('en-IN')} – ₹${budget.max.toLocaleString('en-IN')}`
+                  : budget?.min
+                    ? `₹${budget.min.toLocaleString('en-IN')}+`
+                    : 'Set nahi kiya'}
+              </span>
             </div>
 
             <div className="flex justify-between items-center mt-1">

@@ -26,5 +26,22 @@ export const authApi = {
 
   getMe: async () => {
     return fetchApi('/auth/me');
-  }
+  },
+
+  // Always resolves the same way whether or not the number is registered;
+  // the server deliberately does not reveal which.
+  requestPasswordReset: (mobile) => fetchApi('/auth/password-reset/request', {
+    method: 'POST',
+    body: JSON.stringify({ mobile }),
+  }),
+
+  confirmPasswordReset: (payload) => fetchApi('/auth/password-reset/confirm', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
+
+  changePassword: (payload) => fetchApi('/auth/password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
 };

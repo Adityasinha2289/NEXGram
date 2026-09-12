@@ -1,12 +1,14 @@
 import styles from './BottomNav.module.css';
 import { NavLink } from 'react-router-dom';
-import { Home, PackageSearch, ShoppingCart, Target, ClipboardList, Package } from 'lucide-react';
+import { Home, Sparkles, Search, Target, ClipboardList, Package } from 'lucide-react';
 
 export function BottomNav({ role = 'retailer' }) {
+  // Every destination here is a built screen. Pointing the nav at placeholder
+  // pages reads worse than having one tab fewer.
   const retailerLinks = [
     { to: '/retailer/dashboard', icon: Home, label: 'Home' },
-    { to: '/retailer/products', icon: PackageSearch, label: 'Stock' },
-    { to: '/retailer/cart', icon: ShoppingCart, label: 'Cart' },
+    { to: '/retailer/market', icon: Search, label: 'Search' },
+    { to: '/retailer/developer-pack', icon: Sparkles, label: 'Pack' },
     { to: '/retailer/orders', icon: ClipboardList, label: 'Orders' },
   ];
 

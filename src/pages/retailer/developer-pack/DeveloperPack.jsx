@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowRight, PackageOpen } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
+import { ErrorState } from '../../../components/ui/ErrorState';
+import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 
 import { useDeveloperPack } from './hooks/useDeveloperPack';
 import { BusinessContextCard } from './components/BusinessContextCard';
 import { PackProductCard } from './components/PackProductCard';
 import { PackSummary } from './components/PackSummary';
 import { PackProductSelector } from './components/PackProductSelector';
+import { PackOrderAction } from './components/PackOrderAction';
 
 export function DeveloperPack() {
   const navigate = useNavigate();
@@ -19,10 +22,15 @@ export function DeveloperPack() {
     budgetStatus, 
     removeProduct, 
     addProduct,
-    regeneratePack
+    regeneratePack,
+    isLoading,
+    error,
   } = useDeveloperPack();
 
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorState description={error} onRetry={regeneratePack} />;
 
   return (
     <div className="flex flex-col gap-6 pb-24 animate-fade-in relative">
@@ -43,13 +51,13 @@ export function DeveloperPack() {
           <BusinessContextCard />
 
           <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-bold text-lg text-text-primary">Products in Pack</h3>
-              <div className="flex gap-2">
+            <div className="flex justify-between items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-lg text-text-primary whitespace-nowrap">Products in Pack</h3>
+              <div className="flex gap-2 flex-shrink-0">
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="text-text-muted"
+                  className="text-text-muted whitespace-nowrap"
                   onClick={() => regeneratePack()}
                 >
                   Pack Dobara Banao
@@ -58,7 +66,7 @@ export function DeveloperPack() {
                   variant="ghost" 
                   size="sm" 
                   icon={Plus} 
-                  className="text-primary pr-0"
+                  className="text-primary whitespace-nowrap"
                   onClick={() => setIsSelectorOpen(true)}
                 >
                   Add Product
@@ -93,6 +101,8 @@ export function DeveloperPack() {
 
         {/* RIGHT COLUMN: Summary & Primary CTA (Sticky on Desktop) */}
         <div className="w-full md:flex-[2] md:sticky md:top-6 flex flex-col gap-4">
+          <PackOrderAction packItems={packItems} onOrdered={regeneratePack} />
+
           <PackSummary 
             packItems={packItems}
             totalEstimatedPrice={totalEstimatedPrice}
@@ -113,19 +123,6 @@ export function DeveloperPack() {
         </div>
 
       </div>
-
-      {/* Floating Add CTA for Mobile */}
-      {packItems.length > 0 && (
-        <div className="fixed bottom-24 right-4 md:hidden z-10">
-          <button 
-            onClick={() => setIsSelectorOpen(true)}
-            className="w-14 h-14 bg-surface text-primary border border-border rounded-full shadow-lg flex items-center justify-center hover:bg-surface-muted transition-colors"
-            aria-label="Add Product"
-          >
-            <Plus size={24} />
-          </button>
-        </div>
-      )}
 
       {/* 6. ADD PRODUCTS MODAL */}
       {isSelectorOpen && (

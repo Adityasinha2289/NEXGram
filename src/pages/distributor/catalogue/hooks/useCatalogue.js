@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { distributorsApi } from '../../../../services/api/distributorsApi';
+import { intelligenceApi } from '../../../../services/api/intelligenceApi';
 import { useAuth } from '../../../../context/AuthContext';
 
 export function useCatalogue() {
@@ -75,17 +76,36 @@ export function useCatalogue() {
     };
   }, [products, totalCount]);
 
-  // Actions (Mutations are mocked for now since Phase 4.2 is read-only API)
-  const addProduct = (product) => {
-    console.log("Mock add product", product);
+  /**
+   * Stock changes move the local supply picture, which re-scores every gap in
+   * this distributor's area - including the one that prompted the change. The
+   * refresh is best-effort: the catalogue write has already committed, and the
+   * pipeline is idempotent, so a failure here only delays the recompute.
+   */
+  const refreshIntelligence = async () => {
+    try {
+      await intelligenceApi.refresh();
+    } catch (err) {
+      console.warn('Intelligence refresh failed; scores update on the next run.', err);
+    }
   };
 
-  const updateProduct = (id, updatedFields) => {
-    console.log("Mock update product", id, updatedFields);
+  const addProduct = async (product) => {
+    await distributorsApi.addCatalogueItem(product);
+    await fetchCatalogue();
+    await refreshIntelligence();
   };
 
-  const removeProduct = (id) => {
-    console.log("Mock remove product", id);
+  const updateProduct = async (id, updatedFields) => {
+    await distributorsApi.updateCatalogueItem(id, updatedFields);
+    await fetchCatalogue();
+    await refreshIntelligence();
+  };
+
+  const removeProduct = async (id) => {
+    await distributorsApi.removeCatalogueItem(id);
+    await fetchCatalogue();
+    await refreshIntelligence();
   };
 
   return {

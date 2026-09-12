@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/Card';
+import { OrderTimeline } from '../../../components/ui/OrderTimeline';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { ordersApi } from '../../../services/api/ordersApi';
 
@@ -138,23 +139,7 @@ export function OrderDetail() {
         </CardContent>
       </Card>
       
-      {/* History Log */}
-      <Card className="border-border">
-        <CardContent className="p-4">
-          <h3 className="font-bold text-md text-text-primary mb-3">Timeline</h3>
-          <ul className="flex flex-col gap-2">
-            {order.history.map((h, i) => (
-              <li key={h.id} className="text-xs flex gap-2 text-text-muted">
-                <Clock size={14} className="mt-0.5 shrink-0" />
-                <span>
-                  Changed to <strong className="capitalize">{h.new_status}</strong> on {new Date(h.created_at).toLocaleString('en-IN')}
-                  {h.reason && ` - ${h.reason}`}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+      <OrderTimeline history={order.history} currentStatus={order.status} />
 
     </div>
   );

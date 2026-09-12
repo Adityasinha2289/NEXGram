@@ -1,18 +1,17 @@
 .layout {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
 }
 
 .content {
   flex: 1;
-  overflow-y: auto;
-  padding-top: 60px; /* Space for TopNav */
+  padding-top: 60px; /* clears the fixed header */
 }
 
 .hasBottomNav {
-  padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
 }
 
 .container {
@@ -20,4 +19,27 @@
   max-width: var(--max-width-desktop);
   margin: 0 auto;
   padding: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  /* The nav becomes a left sidebar, so the page body moves over rather than
+     reserving space at the bottom for a bar that is no longer there. */
+  .hasBottomNav {
+    padding-bottom: 0;
+    padding-left: var(--sidebar-width);
+  }
+
+  .container {
+    /* Comfortable reading measure, centred in the space beside the sidebar.
+       Cards stretched across the full 1024px looked empty. */
+    max-width: 880px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    padding: var(--spacing-xl);
+  }
 }

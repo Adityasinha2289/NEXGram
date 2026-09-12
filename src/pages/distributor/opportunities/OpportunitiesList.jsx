@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, PackageOpen, AlertCircle, Search } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
-import { fetchApi } from '../../../services/api/client';
+import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
+import { intelligenceApi } from '../../../services/api/intelligenceApi';
 
 export function OpportunitiesList() {
   const navigate = useNavigate();
@@ -16,8 +17,8 @@ export function OpportunitiesList() {
       try {
         setLoading(true);
         // GET /api/intelligence/opportunities
-        const res = await fetchApi('/intelligence/opportunities');
-        setOpportunities(res || []);
+        const res = await intelligenceApi.getOpportunities();
+        setOpportunities(res.items || []);
       } catch (err) {
         console.error("Failed to load opportunities:", err);
       } finally {
@@ -28,7 +29,7 @@ export function OpportunitiesList() {
   }, []);
 
   if (loading) {
-    return <div className="p-4 text-center text-text-muted">Loading opportunities...</div>;
+    return <LoadingSpinner />;
   }
 
   if (opportunities.length === 0) {
@@ -41,13 +42,6 @@ export function OpportunitiesList() {
       </div>
     );
   }
-
-  const getOppBadge = (score) => {
-    if (score >= 80) return <Badge variant="success">Strong</Badge>;
-    if (score >= 65) return <Badge variant="primary">Good</Badge>;
-    if (score >= 45) return <Badge variant="warning">Moderate</Badge>;
-    return <Badge variant="default">Low</Badge>;
-  };
 
   return (
     <div className="flex flex-col gap-4 pb-20 animate-fade-in">
@@ -64,31 +58,48 @@ export function OpportunitiesList() {
             onClick={() => navigate(`/distributor/opportunities/${opp.id}`)}
           >
             <CardContent className="p-4 flex flex-col gap-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-xs text-text-muted uppercase font-bold tracking-wider mb-0.5">
-                    {opp.category_id || "Category"}
-                  </p>
-                  <h4 className="font-bold text-md text-text-primary leading-tight">
-                    {opp.product_id ? opp.product_id.toUpperCase() : (opp.category_id ? opp.category_id.toUpperCase() : "Opportunity")}
-                  </h4>
+              <div className="flex justify-between items-start gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs text-text-muted uppercase font-bold tracking-wider mb-0.5">{opp.category}</p>
+                  <h4 className="font-bold text-md text-text-primary leading-tight">{opp.name}</h4>
+                  {opp.area && (
+                    <p className="text-xs text-text-muted mt-1 flex items-center gap-1">
+                      <MapPin size={12} /> {opp.area}
+                    </p>
+                  )}
                 </div>
-                {getOppBadge(opp.opportunity_score)}
+                <div className="text-right flex-shrink-0">
+                  <p className="text-2xl font-bold text-text-primary leading-none">{Math.round(opp.score)}</p>
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider">out of 100</p>
+                  <Badge variant={opp.tierVariant} className="mt-1.5">{opp.tier}</Badge>
+                </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2 text-sm bg-surface-muted p-2 rounded-md">
                 <div>
-                  <span className="text-text-muted text-xs block">Retailers Demand</span>
-                  <span className="font-semibold text-text-primary">{opp.potential_retailer_count}</span>
+                  <span className="text-text-muted text-xs block">Retailers asking</span>
+                  <span className="font-semibold text-text-primary">{opp.retailerCount}</span>
                 </div>
                 <div>
-                  <span className="text-text-muted text-xs block">Competition</span>
-                  <span className="font-semibold text-text-primary">{opp.supply_score} local suppliers</span>
+                  <span className="text-text-muted text-xs block">Can fulfil today</span>
+                  <span className="font-semibold text-text-primary">
+                    {opp.supplierCount === 0
+                      ? 'Koi supplier nahi'
+                      : `${opp.availableSupplierCount} of ${opp.supplierCount} listing${opp.supplierCount === 1 ? '' : 's'}`}
+                  </span>
                 </div>
               </div>
-              
-              <p className="text-sm text-text-muted italic line-clamp-1">
-                {opp.evidence_json?.summary || "Opportunity detected based on local demand."}
+
+              {/* A score never appears without the evidence behind it. */}
+              <p className="text-xs text-text-muted">
+                <span className="font-semibold text-text-primary">{opp.confidence} confidence</span>
+                {' '}&middot; {opp.retailerCount} retailer signal{opp.retailerCount === 1 ? '' : 's'}
+              </p>
+
+              {/* Generated from the evidence object and checked against it before
+                  display, so it cannot state a figure the engine did not produce. */}
+              <p className="text-sm text-text-secondary leading-snug">
+                {opp.explanation?.text || opp.evidence?.summary || 'Opportunity detected based on local demand.'}
               </p>
             </CardContent>
           </Card>

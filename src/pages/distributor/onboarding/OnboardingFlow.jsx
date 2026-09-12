@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { intelligenceApi } from '../../../services/api/intelligenceApi';
 import { profilesApi } from '../../../services/api/profilesApi';
 import { OnboardingShell } from '../../../components/ui/OnboardingShell';
 
@@ -75,6 +76,13 @@ export function OnboardingFlow() {
         setCurrentStep(prev => prev + 1);
         window.scrollTo(0, 0);
       } else {
+        // A new distributor changes local supply, which re-scores every gap
+        // in their area. Recompute so their feed isn't empty on arrival.
+        try {
+          await intelligenceApi.refresh();
+        } catch (err) {
+          console.warn('Intelligence refresh failed; opportunities will appear on the next run.', err);
+        }
         navigate('/distributor/dashboard');
       }
     } catch (err) {

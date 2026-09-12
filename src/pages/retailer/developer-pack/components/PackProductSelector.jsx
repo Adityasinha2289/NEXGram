@@ -1,14 +1,26 @@
 import { X, Plus, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Input } from '../../../../components/ui/Input';
-import { AVAILABLE_PRODUCTS_MOCK } from '../../../../data/retailerMock';
+import { LoadingSpinner } from '../../../../components/ui/LoadingSpinner';
+import { intelligenceApi } from '../../../../services/api/intelligenceApi';
 
 export function PackProductSelector({ onAdd, onCancel, currentPackItems }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [options, setOptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Filter out products that are already in the pack
+  // Only what a supplier near this shop can actually deliver.
+  useEffect(() => {
+    let cancelled = false;
+    intelligenceApi.getDeveloperPackOptions()
+      .then(items => { if (!cancelled) setOptions(items); })
+      .catch(() => { if (!cancelled) setOptions([]); })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
   const currentIds = currentPackItems.map(item => item.id);
-  const addableProducts = AVAILABLE_PRODUCTS_MOCK.filter(p => !currentIds.includes(p.id));
+  const addableProducts = options.filter(p => !currentIds.includes(p.id));
   
   // Apply search filter
   const filteredProducts = addableProducts.filter(p => 
@@ -45,7 +57,9 @@ export function PackProductSelector({ onAdd, onCancel, currentPackItems }) {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-          {filteredProducts.length === 0 ? (
+          {isLoading ? (
+            <LoadingSpinner />
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-8 text-text-muted">
               {addableProducts.length === 0 
                 ? "Saare available products pack mein hain!" 
@@ -57,7 +71,9 @@ export function PackProductSelector({ onAdd, onCancel, currentPackItems }) {
                 <div className="flex-1 mr-3">
                   <p className="text-[10px] uppercase font-bold tracking-wider text-text-muted">{product.category}</p>
                   <p className="font-bold text-sm text-text-primary">{product.name}</p>
-                  <p className="text-xs text-text-muted mt-0.5">Est: ₹{product.price} ({product.suggestedQuantity} {product.unit})</p>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    {product.variant} &middot; ₹{product.price}/pack &middot; MOQ {product.minimumOrderQuantity} &middot; {product.distributorName}
+                  </p>
                 </div>
                 <button 
                   onClick={() => onAdd(product)}

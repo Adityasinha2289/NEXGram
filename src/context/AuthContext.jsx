@@ -4,6 +4,39 @@ import { profilesApi } from '../services/api/profilesApi';
 
 const AuthContext = createContext(null);
 
+const SESSION_CACHE_KEY = 'nexgram_session_cache';
+
+/**
+ * The last verified session, kept so a shop that loses signal stays signed in.
+ *
+ * It is a convenience copy for rendering, never an authority: the token is
+ * still what the API checks, and a real 401 clears both.
+ */
+function readSessionCache() {
+  try {
+    const raw = localStorage.getItem(SESSION_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionCache(user, profile) {
+  try {
+    localStorage.setItem(SESSION_CACHE_KEY, JSON.stringify({ user, profile }));
+  } catch {
+    // Private mode or a full quota: the app works, it just re-verifies online.
+  }
+}
+
+function clearSessionCache() {
+  try {
+    localStorage.removeItem(SESSION_CACHE_KEY);
+  } catch {
+    // Nothing to do.
+  }
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -21,10 +54,9 @@ export function AuthProvider({ children }) {
     try {
       const user = await authApi.getMe();
       setCurrentUser(user);
-      
-      // Fetch Profile
+
+      let profData = null;
       try {
-        let profData = null;
         if (user.role === 'retailer') {
           profData = await profilesApi.getRetailerProfile();
         } else if (user.role === 'distributor') {
@@ -33,13 +65,27 @@ export function AuthProvider({ children }) {
         setProfile(profData);
       } catch (err) {
         console.error('Failed to fetch profile:', err);
+        setProfile(readSessionCache()?.profile ?? null);
       }
-      
+
+      writeSessionCache(user, profData);
     } catch (err) {
-      console.error('Failed to fetch user session:', err);
-      setCurrentUser(null);
-      setProfile(null);
-      localStorage.removeItem('nexgram_access_token');
+      // Only a rejected token ends the session. A network failure must not:
+      // signing a shopkeeper out because their signal dropped would lose their
+      // place every time they walk behind the counter.
+      if (err.status === 401 || err.status === 403) {
+        setCurrentUser(null);
+        setProfile(null);
+        localStorage.removeItem('nexgram_access_token');
+        clearSessionCache();
+      } else {
+        const cached = readSessionCache();
+        if (cached?.user) {
+          setCurrentUser(cached.user);
+          setProfile(cached.profile ?? null);
+        }
+        console.warn('Session could not be verified; using the last known one.', err);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -51,7 +97,9 @@ export function AuthProvider({ children }) {
     // Listen for unauthorized events emitted by fetchApi
     const handleUnauthorized = () => {
       setCurrentUser(null);
+      setProfile(null);
       localStorage.removeItem('nexgram_access_token');
+      clearSessionCache();
     };
     window.addEventListener('auth:unauthorized', handleUnauthorized);
     return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
@@ -73,6 +121,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('nexgram_access_token');
+    clearSessionCache();
     setCurrentUser(null);
     setProfile(null);
   };

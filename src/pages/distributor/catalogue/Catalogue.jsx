@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { PackageOpen, Plus } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -25,11 +26,29 @@ export function Catalogue() {
     removeProduct
   } = useCatalogue();
 
+  const location = useLocation();
+  const consumedPrefill = useRef(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [prefill, setPrefill] = useState(null);
+
+  // Arriving from an opportunity: open the form already pointed at the product
+  // the distributor was just told about, with the suggested opening stock.
+  useEffect(() => {
+    const incoming = location.state?.prefill;
+    if (!incoming || consumedPrefill.current) return;
+    consumedPrefill.current = true;
+    setPrefill(incoming);
+    setEditingProduct(null);
+    setIsFormOpen(true);
+    // Drop it from history directly rather than via navigate(): a router
+    // navigation here re-runs this effect and closes the form we just opened.
+    window.history.replaceState({ ...window.history.state, usr: null }, '');
+  }, [location.state]);
 
   const handleOpenAdd = () => {
     setEditingProduct(null);
+    setPrefill(null);
     setIsFormOpen(true);
   };
 
@@ -41,21 +60,26 @@ export function Catalogue() {
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingProduct(null);
+    setPrefill(null);
   };
 
-  const handleSubmitForm = (formData) => {
+  // Let the form surface its own failure: closing on a rejected save would
+  // discard the user's input and quietly pretend it worked.
+  const handleSubmitForm = async (formData) => {
     if (editingProduct) {
-      updateProduct(editingProduct.id, formData);
+      await updateProduct(editingProduct.id, formData);
     } else {
-      addProduct(formData);
+      await addProduct(formData);
     }
     handleCloseForm();
   };
 
-  const handleRemove = (id) => {
-    const confirmDelete = window.confirm("Is product ko catalogue se remove karna hai?");
-    if (confirmDelete) {
-      removeProduct(id);
+  const handleRemove = async (id) => {
+    if (!window.confirm("Is product ko catalogue se remove karna hai?")) return;
+    try {
+      await removeProduct(id);
+    } catch (err) {
+      console.error('Failed to remove catalogue item:', err);
     }
   };
 
@@ -150,22 +174,10 @@ export function Catalogue() {
         </>
       )}
 
-      {/* Floating Action Button for Mobile Add */}
-      {allProductsCount > 0 && (
-        <div className="fixed bottom-24 right-4 sm:hidden z-10">
-          <button 
-            onClick={handleOpenAdd}
-            className="w-14 h-14 bg-primary text-text-inverse rounded-full shadow-lg flex items-center justify-center hover:bg-primary-dark transition-colors"
-            aria-label="Add Product"
-          >
-            <Plus size={24} />
-          </button>
-        </div>
-      )}
-
       {/* Modal Form */}
       {isFormOpen && (
         <ProductForm 
+          prefill={prefill}
           initialData={editingProduct} 
           onSubmit={handleSubmitForm} 
           onCancel={handleCloseForm} 

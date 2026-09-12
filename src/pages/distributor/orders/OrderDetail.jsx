@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/Card';
+import { OrderTimeline } from '../../../components/ui/OrderTimeline';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -164,6 +165,8 @@ export function OrderDetail() {
           )}
         </div>
       )}
+
+      <OrderTimeline history={order.history} currentStatus={order.status} />
 
     </div>
   );

@@ -52,28 +52,17 @@ export function OpportunityDetail() {
     return 'text-warning';
   };
 
-  const getOppLevel = (score) => {
-    if (score >= 80) return "Strong";
-    if (score >= 65) return "Good";
-    if (score >= 45) return "Moderate";
-    return "Low";
-  };
-
-  const oppLevel = getOppLevel(opportunity.opportunity_score);
-  const targetName = opportunity.product_id ? opportunity.product_id.toUpperCase() : (opportunity.category_id ? opportunity.category_id.toUpperCase() : "OPPORTUNITY");
+  const oppLevel = opportunity.tier;
+  const targetName = opportunity.name;
+  const breakdown = opportunity.evidence?.breakdown || [];
 
   return (
-    <div className="flex flex-col gap-6 pb-20 animate-fade-in relative h-full">
-      <header className="flex items-center gap-3">
-        <button 
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 rounded-full hover:bg-surface-muted text-text-muted transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </button>
+    <div className="flex flex-col gap-6 pb-44 animate-fade-in relative">
+      {/* The Layout header already provides a back control. */}
+      <header>
         <div>
           <h2 className="text-xl font-bold text-text-primary leading-tight">{targetName}</h2>
-          <p className="text-sm text-text-muted mt-0.5">{opportunity.category_id || "Category"}</p>
+          <p className="text-sm text-text-muted mt-0.5">{opportunity.category}{opportunity.area ? ` · ${opportunity.area}` : ''}</p>
         </div>
       </header>
 
@@ -83,12 +72,53 @@ export function OpportunityDetail() {
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
             <Zap size={24} fill="currentColor" />
           </div>
-          <div>
-            <h3 className="font-bold text-lg text-text-primary mb-1">{oppLevel} Opportunity</h3>
-            <p className="text-sm text-text-muted leading-relaxed">{opportunity.evidence_json?.summary || "Data-driven gap in the market."}</p>
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-3xl font-bold text-text-primary leading-none">{Math.round(opportunity.score)}</span>
+              <span className="text-sm text-text-muted">/ 100</span>
+              <Badge variant={opportunity.tierVariant}>{oppLevel}</Badge>
+            </div>
+            <p className="text-xs text-text-muted mt-1.5">
+              <span className="font-semibold text-text-primary">{opportunity.confidence} confidence</span>
+              {' '}&middot; {opportunity.retailerCount} retailer signal{opportunity.retailerCount === 1 ? '' : 's'}
+            </p>
+            <p className="text-sm text-text-muted leading-relaxed mt-2">
+              {opportunity.evidence?.summary || "Data-driven gap in the market."}
+            </p>
           </div>
         </CardContent>
       </Card>
+
+      {/* How the score was reached. This is the product's core promise:
+          no number without the arithmetic behind it. */}
+      {breakdown.length > 0 && (
+        <Card className="border-border">
+          <CardContent className="p-4 flex flex-col gap-3">
+            <h3 className="font-bold text-sm text-text-primary">Yeh score kaise bana</h3>
+            {breakdown.map(part => (
+              <div key={part.label} className="flex flex-col gap-1">
+                <div className="flex justify-between items-baseline text-sm">
+                  <span className="text-text-primary font-medium">{part.label}</span>
+                  <span className="text-text-muted tabular-nums">
+                    {Math.round(part.points)} / {Math.round(part.max)}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-surface-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full"
+                    style={{ width: `${Math.min(100, (part.points / part.max) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-text-muted">{part.detail}</p>
+              </div>
+            ))}
+            <div className="flex justify-between items-baseline border-t border-border pt-2 font-bold text-sm">
+              <span className="text-text-primary">Total</span>
+              <span className="text-primary tabular-nums">{Math.round(opportunity.score)} / 100</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Detail Grid */}
       <div className="grid grid-cols-2 gap-4">
@@ -98,7 +128,7 @@ export function OpportunityDetail() {
               <TrendingUp size={14} />
               <span className="text-xs font-bold uppercase tracking-wider">Demand Score</span>
             </div>
-            <span className={`text-lg font-bold ${getDemandColor(opportunity.demand_score)}`}>{opportunity.demand_score}</span>
+            <span className={`text-lg font-bold ${getDemandColor(opportunity.components.demand)}`}>{Math.round(opportunity.components.demand)}</span>
           </CardContent>
         </Card>
         
@@ -108,7 +138,7 @@ export function OpportunityDetail() {
               <Store size={14} />
               <span className="text-xs font-bold uppercase tracking-wider">Retailers</span>
             </div>
-            <span className="text-lg font-bold text-text-primary">{opportunity.potential_retailer_count} Looking</span>
+            <span className="text-lg font-bold text-text-primary">{opportunity.retailerCount} Looking</span>
           </CardContent>
         </Card>
 
@@ -118,7 +148,7 @@ export function OpportunityDetail() {
               <Package size={14} />
               <span className="text-xs font-bold uppercase tracking-wider">Local Supply</span>
             </div>
-            <span className="text-lg font-bold text-text-primary">{opportunity.supply_score} Suppliers</span>
+            <span className="text-lg font-bold text-text-primary">{opportunity.availableSupplierCount} can fulfil</span>
           </CardContent>
         </Card>
 
@@ -128,15 +158,32 @@ export function OpportunityDetail() {
               <TrendingUp size={14} className="rotate-180" />
               <span className="text-xs font-bold uppercase tracking-wider">Competition</span>
             </div>
-            <span className="text-lg font-bold text-text-primary">{opportunity.evidence_json?.competition || "Unknown"}</span>
+            <span className="text-lg font-bold text-text-primary">{opportunity.evidence?.competition || "Unknown"}</span>
           </CardContent>
         </Card>
       </div>
 
       {/* Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface border-t border-border flex gap-3 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <Button variant="primary" fullWidth onClick={() => navigate('/distributor/catalogue')} icon={Package}>
-          Add to Catalogue ({opportunity.recommended_initial_stock} units suggested)
+      <div className="fixed bottom-[70px] left-0 right-0 mx-auto max-w-[1024px] p-4 bg-surface border-t border-border flex gap-3 z-[60] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <Button
+          variant="primary"
+          fullWidth
+          icon={Package}
+          disabled={!opportunity.defaultVariantId}
+          onClick={() => navigate('/distributor/catalogue', {
+            state: {
+              prefill: {
+                variantId: opportunity.defaultVariantId,
+                label: `${opportunity.name} ${opportunity.defaultVariantName || ''}`.trim(),
+                category: opportunity.category,
+                availableStock: opportunity.recommendedInitialStock,
+              },
+            },
+          })}
+        >
+          {opportunity.defaultVariantId
+            ? `Add to Catalogue (${opportunity.recommendedInitialStock} units suggested)`
+            : 'Category-level signal - koi specific product nahi'}
         </Button>
       </div>
     </div>

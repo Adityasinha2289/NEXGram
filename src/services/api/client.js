@@ -1,3 +1,5 @@
+import { markFresh } from '../../utils/serviceWorker';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 export async function fetchApi(endpoint, options = {}) {
@@ -18,13 +20,20 @@ export async function fetchApi(endpoint, options = {}) {
     headers,
   });
 
+  // Reaching the network means anything previously flagged as stale is current
+  // again.
+  markFresh();
+  window.dispatchEvent(new CustomEvent('api:stale', { detail: { stale: false } }));
+
   if (!response.ok) {
     if (response.status === 401) {
       localStorage.removeItem('nexgram_access_token');
       window.dispatchEvent(new Event('auth:unauthorized'));
     }
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'API request failed');
+    const error = new Error(errorData.detail || 'API request failed');
+    error.status = response.status;
+    throw error;
   }
 
   return response.json();
