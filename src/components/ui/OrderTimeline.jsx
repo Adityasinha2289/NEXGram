@@ -1,5 +1,4 @@
 import { Ban, Check, ChefHat, Clock, PackageCheck, Send, Truck, XCircle } from 'lucide-react';
-import { Card, CardContent } from './Card';
 
 /**
  * An order's lifecycle, drawn from order_status_history.
@@ -50,7 +49,13 @@ export function OrderTimeline({ history = [], currentStatus }) {
         icon: step.icon,
         when: entry ? formatWhen(entry.created_at) : null,
         reason: entry?.reason,
-        state: entry ? 'done' : index === currentIndex + 1 ? 'next' : 'pending',
+        // A step the order has already passed is done whether or not the
+        // history recorded it. Without this, a completed order listed the
+        // steps in between as "abhi baaki hai" — still to come, after the
+        // thing they lead to had already happened.
+        state: entry || index <= currentIndex
+          ? 'done'
+          : index === currentIndex + 1 ? 'next' : 'pending',
       };
     }),
     ...(terminal
@@ -73,9 +78,9 @@ export function OrderTimeline({ history = [], currentStatus }) {
   };
 
   return (
-    <Card className="border-border">
-      <CardContent className="p-4">
-        <h3 className="font-bold text-base text-text-primary mb-4">Order Kahan Hai?</h3>
+    <section className="flex flex-col gap-3">
+      <h3 className="text-base font-semibold leading-tight text-text-primary">Order Kahan Hai?</h3>
+      <div className="panel p-4">
         <ol className="flex flex-col">
           {rows.map((row, index) => {
             const style = STATE_STYLES[row.state];
@@ -92,21 +97,21 @@ export function OrderTimeline({ history = [], currentStatus }) {
                 <div className={`pb-4 min-w-0 ${isLast ? 'pb-0' : ''}`}>
                   <p className={`text-sm font-medium leading-tight ${style.text}`}>{row.label}</p>
                   {row.when ? (
-                    <p className="text-xs text-text-muted mt-0.5 flex items-center gap-1">
+                    <p className="num mt-0.5 flex items-center gap-1 text-2xs text-text-muted">
                       <Clock size={11} /> {row.when}
                     </p>
-                  ) : (
-                    <p className="text-xs text-text-muted mt-0.5">
+                  ) : row.state === 'done' ? null : (
+                    <p className="mt-0.5 text-2xs text-text-muted">
                       {row.state === 'next' ? 'Agla step' : 'Abhi baaki hai'}
                     </p>
                   )}
-                  {row.reason && <p className="text-xs text-text-muted mt-0.5">{row.reason}</p>}
+                  {row.reason && <p className="mt-0.5 text-2xs text-text-muted">{row.reason}</p>}
                 </div>
               </li>
             );
           })}
         </ol>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

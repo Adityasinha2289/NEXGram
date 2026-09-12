@@ -1,55 +1,66 @@
 import { Search } from 'lucide-react';
+import { FilterChips } from '../../../../components/ui/FilterChips';
 import { Input } from '../../../../components/ui/Input';
 
-const CATEGORIES = ['All', 'Dairy', 'FMCG', 'Staples', 'Beverages', 'Spices', 'Household', 'Agriculture'];
-const SORTS = ['Recommended', 'Nearest', 'Fastest Delivery'];
+/**
+ * Sorts the list actually implements.
+ *
+ * "Fastest Delivery" used to be offered here and matched no branch in the sort
+ * function, so choosing it silently did nothing; "Most pack products" was
+ * implemented but never offered.
+ */
+export const SORTS = [
+  { value: 'Recommended', label: 'Recommended' },
+  { value: 'Most Pack Products', label: 'Pack ke sabse zyada products' },
+  { value: 'Nearest', label: 'Sabse paas' },
+];
 
-export function DistributorFilters({ 
-  searchQuery, 
-  setSearchQuery, 
-  selectedCategory, 
+export function DistributorFilters({
+  searchQuery,
+  setSearchQuery,
+  categories,
+  selectedCategory,
   setSelectedCategory,
   sortBy,
-  setSortBy
+  setSortBy,
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <Input
-        placeholder="Distributor ya category search karein..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        icon={Search}
-      />
-      
-      <div className="flex items-center gap-2">
-        {/* Horizontal scrolling chip list for categories */}
-        <div className="flex-1 flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-          {CATEGORIES.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                selectedCategory === category 
-                  ? 'bg-primary text-text-inverse shadow-sm' 
-                  : 'bg-surface border border-border text-text-muted hover:bg-surface-muted'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Input
+          placeholder="Distributor ya category dhoondhein"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          icon={Search}
+          type="search"
+          aria-label="Distributor dhoondhein"
+        />
 
-        {/* Lightweight Sort Control */}
-        <div className="flex-shrink-0 pb-2">
-          <select 
-            className="bg-surface border border-border text-text-muted text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none cursor-pointer"
+        <label className="flex flex-shrink-0 items-center gap-2 text-sm text-text-muted">
+          <span className="sr-only sm:not-sr-only">Sort</span>
+          <select
+            className="h-[42px] cursor-pointer rounded-md border border-border-strong bg-surface px-3 text-sm text-text-primary transition-colors hover:border-text-faint focus:border-primary focus:outline-none"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
-            {SORTS.map(s => <option key={s} value={s}>{s}</option>)}
+            {SORTS.map((sort) => (
+              <option key={sort.value} value={sort.value}>{sort.label}</option>
+            ))}
           </select>
-        </div>
+        </label>
       </div>
+
+      {/* Built from the distributors actually returned, not a hard-coded list
+          that had already drifted away from what the database holds. */}
+      {categories.length > 2 && (
+        <FilterChips
+          name="distributor-category"
+          label="Category se filter karein"
+          options={categories}
+          value={selectedCategory}
+          onChange={setSelectedCategory}
+        />
+      )}
     </div>
   );
 }

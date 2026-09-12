@@ -77,6 +77,22 @@ describe('OrderTimeline', () => {
     expect(screen.queryByText('Agla step')).not.toBeInTheDocument();
   });
 
+  it('does not list a passed step as still to come', () => {
+    // Real histories skip states: an order can go straight from accepted to
+    // completed. The steps in between have happened, whether or not anyone
+    // wrote a row for them, so they must not read as pending.
+    render(
+      <OrderTimeline
+        history={history('requested', 'accepted', 'completed')}
+        currentStatus="completed"
+      />,
+    );
+
+    expect(screen.getByText('Taiyari ho rahi hai')).toBeInTheDocument();
+    expect(screen.queryByText('Abhi baaki hai')).not.toBeInTheDocument();
+    expect(screen.queryByText('Agla step')).not.toBeInTheDocument();
+  });
+
   it('renders without history rather than crashing', () => {
     render(<OrderTimeline history={[]} currentStatus="requested" />);
     expect(screen.getByText('Order Kahan Hai?')).toBeInTheDocument();
