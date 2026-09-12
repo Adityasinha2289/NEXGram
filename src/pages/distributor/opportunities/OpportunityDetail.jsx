@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, Store, Package, Zap } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
+import { ScoreRing } from '../../../components/ui/ScoreRing';
 import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { fetchApi } from '../../../services/api/client';
@@ -69,14 +70,17 @@ export function OpportunityDetail() {
       {/* Hero Metric */}
       <Card className="border-primary/20 bg-primary/5 shadow-sm">
         <CardContent className="p-5 flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
-            <Zap size={24} fill="currentColor" />
-          </div>
+          <ScoreRing
+            score={opportunity.score}
+            tier={opportunity.tier}
+            confidence={opportunity.confidence}
+            size="lg"
+            showLabel={false}
+          />
           <div className="min-w-0">
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-3xl font-bold text-text-primary leading-none">{Math.round(opportunity.score)}</span>
-              <span className="text-sm text-text-muted">/ 100</span>
-              <Badge variant={opportunity.tierVariant}>{oppLevel}</Badge>
+              <span className="text-lg font-bold text-text-primary leading-none">{oppLevel} opportunity</span>
+              <Badge variant={opportunity.tierVariant}>{Math.round(opportunity.score)}/100</Badge>
             </div>
             <p className="text-xs text-text-muted mt-1.5">
               <span className="font-semibold text-text-primary">{opportunity.confidence} confidence</span>

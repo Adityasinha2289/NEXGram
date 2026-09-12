@@ -5,6 +5,7 @@ import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
+import { ScoreRing } from '../../../components/ui/ScoreRing';
 import { intelligenceApi } from '../../../services/api/intelligenceApi';
 
 export function OpportunitiesList() {
@@ -68,10 +69,8 @@ export function OpportunitiesList() {
                     </p>
                   )}
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-2xl font-bold text-text-primary leading-none">{Math.round(opp.score)}</p>
-                  <p className="text-[10px] text-text-muted uppercase tracking-wider">out of 100</p>
-                  <Badge variant={opp.tierVariant} className="mt-1.5">{opp.tier}</Badge>
+                <div className="flex-shrink-0">
+                  <ScoreRing score={opp.score} tier={opp.tier} confidence={opp.confidence} />
                 </div>
               </div>
 
@@ -91,10 +90,12 @@ export function OpportunitiesList() {
               </div>
 
               {/* A score never appears without the evidence behind it. */}
-              <p className="text-xs text-text-muted">
-                <span className="font-semibold text-text-primary">{opp.confidence} confidence</span>
-                {' '}&middot; {opp.retailerCount} retailer signal{opp.retailerCount === 1 ? '' : 's'}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant={opp.tierVariant}>{opp.tier}</Badge>
+                <span className="text-xs text-text-muted">
+                  {opp.retailerCount} retailer signal{opp.retailerCount === 1 ? '' : 's'}
+                </span>
+              </div>
 
               {/* Generated from the evidence object and checked against it before
                   display, so it cannot state a figure the engine did not produce. */}
