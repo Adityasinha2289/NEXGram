@@ -45,7 +45,7 @@ export const Header = () => {
             <Search className="absolute left-3 h-3.5 w-3.5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search..." aria-label="Search"
               className="w-full bg-muted/40 border border-transparent hover:border-border focus:border-border rounded-md pl-9 pr-4 py-1.5 text-sm focus:outline-none transition-colors placeholder:text-muted-foreground/60"
             />
           </div>

@@ -25,7 +25,7 @@ export default function RetailerOrdersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input 
             type="text" 
-            placeholder="Search orders..." 
+            placeholder="Search orders..." aria-label="Search orders" 
             className="w-full bg-card border border-border/40 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-shadow"
           />
         </div>
@@ -36,7 +36,7 @@ export default function RetailerOrdersPage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center h-64 text-red-500">
+        <div className="flex flex-col items-center justify-center h-64 text-destructive">
           Failed to load orders.
         </div>
       ) : (

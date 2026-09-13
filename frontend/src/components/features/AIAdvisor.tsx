@@ -47,7 +47,7 @@ export const AIAdvisor = () => {
                 Confidence
               </span>
               <span className="text-lg font-medium flex items-center gap-1">
-                88% <CheckCircle2 className="h-4 w-4 text-green-500" />
+                88% <CheckCircle2 className="h-4 w-4 text-success" />
               </span>
             </div>
             <div className="border border-border/40 rounded-lg p-3 bg-muted/10">
@@ -97,7 +97,7 @@ export const AIAdvisor = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ask about inventory, finance, or demand..."
+            aria-label="Ask the advisor a question" placeholder="Ask about inventory, finance, or demand..."
             className="w-full bg-muted/30 border border-border/50 hover:border-border rounded-lg pl-4 pr-12 py-3 text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/60"
           />
           <button className="absolute right-2 p-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">

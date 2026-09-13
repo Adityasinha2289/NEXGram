@@ -43,7 +43,7 @@ export default function DistributorOrderDetailPage() {
   if (error || !order) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-500">Failed to load order details.</p>
+        <p className="text-destructive">Failed to load order details.</p>
         <button onClick={() => router.back()} className="text-primary hover:underline">
           Go back
         </button>
@@ -127,9 +127,9 @@ export default function DistributorOrderDetailPage() {
                   updateStatusMutation.isPending && updateStatusMutation.variables === move.to;
                 const tone =
                   move.tone === "danger"
-                    ? "border border-red-500/20 text-red-600 hover:bg-red-500/10"
+                    ? "border border-destructive/20 text-destructive hover:bg-destructive/10"
                     : move.tone === "success"
-                      ? "bg-green-600 text-white hover:bg-green-700"
+                      ? "bg-success text-white hover:bg-success"
                       : "bg-primary text-primary-foreground hover:bg-primary/90";
                 return (
                   <button

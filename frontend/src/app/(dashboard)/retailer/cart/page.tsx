@@ -100,7 +100,7 @@ export default function CartPage() {
                           </span>
                         </p>
                         {belowMoq && (
-                          <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                          <p className="text-xs text-destructive mt-1 flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
                             Minimum {item.minimum_order_quantity} for this supplier
                           </p>
@@ -117,6 +117,7 @@ export default function CartPage() {
                               )
                             }
                             disabled={item.quantity <= (item.minimum_order_quantity || 1)}
+                            aria-label={`Reduce ${item.product_name} quantity`}
                             className="p-2 text-muted-foreground hover:bg-muted transition-colors rounded-l-lg disabled:opacity-30"
                           >
                             <Minus className="h-3 w-3" />
@@ -130,6 +131,7 @@ export default function CartPage() {
                               )
                             }
                             disabled={item.quantity >= item.available_stock}
+                            aria-label={`Increase ${item.product_name} quantity`}
                             className="p-2 text-muted-foreground hover:bg-muted transition-colors rounded-r-lg disabled:opacity-30"
                           >
                             <Plus className="h-3 w-3" />
@@ -139,7 +141,7 @@ export default function CartPage() {
                         <button
                           onClick={() => removeItem(item.catalogue_item_id)}
                           aria-label={`Remove ${item.product_name}`}
-                          className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                          className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -171,7 +173,7 @@ export default function CartPage() {
           </div>
 
           {shortLines.length > 0 && (
-            <p className="text-xs text-red-600 mb-4 flex items-start gap-1.5">
+            <p className="text-xs text-destructive mb-4 flex items-start gap-1.5">
               <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-px" />
               {shortLines.length} line{shortLines.length === 1 ? "" : "s"} below the supplier&apos;s
               minimum. Raise the quantity or remove them to continue.

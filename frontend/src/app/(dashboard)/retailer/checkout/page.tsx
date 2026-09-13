@@ -84,7 +84,7 @@ export default function CheckoutPage() {
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="h-24 w-24 bg-green-500/10 rounded-full flex items-center justify-center text-green-600"
+          className="h-24 w-24 bg-success/10 rounded-full flex items-center justify-center text-success"
         >
           <CheckCircle2 className="h-12 w-12" />
         </motion.div>
@@ -130,17 +130,17 @@ export default function CheckoutPage() {
       {/* A part-success is reported per supplier, because the orders that did
           go through are real and the ones that did not are still in the cart. */}
       {placed.length > 0 && (
-        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-sm">
-          <p className="font-medium text-green-700">
+        <div className="bg-success/10 border border-success/20 rounded-xl p-4 text-sm">
+          <p className="font-medium text-success">
             {placed.length} order{placed.length === 1 ? "" : "s"} placed:{" "}
             {placed.map((o) => o.order_number).join(", ")}
           </p>
         </div>
       )}
       {failed.length > 0 && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 space-y-2">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 space-y-2">
           {failed.map((f) => (
-            <p key={f.distributorName} className="text-sm flex items-start gap-2 text-red-700">
+            <p key={f.distributorName} className="text-sm flex items-start gap-2 text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>
                 <span className="font-medium">{f.distributorName}:</span> {f.reason}
@@ -182,7 +182,7 @@ export default function CheckoutPage() {
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Special instructions for delivery or packaging..."
+            aria-label="Delivery or packing notes" placeholder="Special instructions for delivery or packaging..."
             className="w-full bg-background border border-border/40 rounded-lg p-3 text-sm min-h-[100px] focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
         </div>

@@ -118,7 +118,7 @@ export const VoiceCommerce = () => {
                       </div>
                       <div className="flex justify-between items-center text-sm border-t border-border/40 pt-3">
                         <span className="text-muted-foreground">Delivery</span>
-                        <span className="font-medium text-green-500">
+                        <span className="font-medium text-success">
                           Tomorrow Morning
                         </span>
                       </div>
@@ -143,7 +143,7 @@ export const VoiceCommerce = () => {
 
                 {voiceState === "success" && (
                   <div className="flex flex-col items-center justify-center py-10 space-y-4">
-                    <div className="h-16 w-16 bg-green-500/10 rounded-full flex items-center justify-center text-green-500">
+                    <div className="h-16 w-16 bg-success/10 rounded-full flex items-center justify-center text-success">
                       <Check className="h-8 w-8" />
                     </div>
                     <p className="text-2xl font-heading font-medium tracking-tight">

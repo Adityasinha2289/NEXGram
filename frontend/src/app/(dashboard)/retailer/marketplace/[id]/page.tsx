@@ -61,7 +61,7 @@ export default function ProductDetailPage() {
   if (error || !product) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-500">
+        <p className="text-destructive">
           {error instanceof Error ? error.message : "Could not load this product."}
         </p>
         <button onClick={() => router.back()} className="text-primary hover:underline">

@@ -18,7 +18,7 @@ export default function MarketplacePage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-500">Failed to load marketplace.</p>
+        <p className="text-destructive">Failed to load marketplace.</p>
       </div>
     );
   }
@@ -37,13 +37,13 @@ export default function MarketplacePage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input 
               type="text" 
-              placeholder="Search products..." 
+              placeholder="Search products..." aria-label="Search products" 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-card border border-border/40 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-shadow"
             />
           </div>
-          <Link href="/retailer/cart" className="bg-primary text-primary-foreground p-2 rounded-lg hover:bg-primary/90 transition-colors">
+          <Link href="/retailer/cart" aria-label="Open cart" className="bg-primary text-primary-foreground p-2 rounded-lg hover:bg-primary/90 transition-colors">
             <ShoppingBag className="h-5 w-5" />
           </Link>
         </div>

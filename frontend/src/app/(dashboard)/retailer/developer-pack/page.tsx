@@ -53,7 +53,7 @@ export default function DeveloperPackPage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : error ? (
-        <div className="bg-red-500/10 border border-red-500/20 text-red-600 rounded-xl p-6 text-sm">
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-xl p-6 text-sm">
           {error instanceof Error ? error.message : "Could not load your stock plan."}
         </div>
       ) : (
@@ -117,7 +117,7 @@ export default function DeveloperPackPage() {
                       </div>
 
                       {line.stockCapped && (
-                        <p className="text-xs text-orange-600">
+                        <p className="text-xs text-warning">
                           Capped by what this supplier currently has in stock.
                         </p>
                       )}

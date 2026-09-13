@@ -49,7 +49,7 @@ export default function FinancingPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : error ? (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl p-6 text-sm">
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-xl p-6 text-sm">
               Failed to load financing schemes.
             </div>
           ) : (
@@ -63,9 +63,9 @@ export default function FinancingPage() {
                           {scheme.authority}
                         </span>
                         <span className={`text-xs font-medium uppercase tracking-widest px-2 py-1 rounded-md ${
-                          scheme.verdictVariant === 'success' ? 'bg-green-500/10 text-green-500' :
-                          scheme.verdictVariant === 'warning' ? 'bg-orange-500/10 text-orange-500' :
-                          'bg-red-500/10 text-red-500'
+                          scheme.verdictVariant === 'success' ? 'bg-success/10 text-success' :
+                          scheme.verdictVariant === 'warning' ? 'bg-warning/10 text-warning' :
+                          'bg-destructive/10 text-destructive'
                         }`}>
                           {scheme.verdict}
                         </span>
@@ -86,11 +86,11 @@ export default function FinancingPage() {
                         {scheme.checks.map((check, idx) => (
                           <li key={idx} className="flex gap-3 text-sm">
                             {check.status === 'met' ? (
-                              <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                              <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
                             ) : check.status === 'self_declare' ? (
-                              <AlertCircle className="h-5 w-5 text-orange-500 shrink-0" />
+                              <AlertCircle className="h-5 w-5 text-warning shrink-0" />
                             ) : (
-                              <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
+                              <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
                             )}
                             <div>
                               <p className="font-medium text-foreground">{check.label}</p>
@@ -159,9 +159,10 @@ export default function FinancingPage() {
             
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium block mb-2">Loan Amount (₹)</label>
-                <input 
-                  type="number" 
+                <label htmlFor="loan-amount" className="text-sm font-medium block mb-2">Loan Amount (₹)</label>
+                <input
+                  id="loan-amount"
+                  type="number"
                   value={loanAmount || ""}
                   onChange={(e) => setLoanAmount(Number(e.target.value))}
                   className="w-full bg-background border border-border/40 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
@@ -170,11 +171,17 @@ export default function FinancingPage() {
               </div>
               
               <div>
-                <label className="text-sm font-medium block mb-2">Tenure (Months)</label>
-                <div className="grid grid-cols-3 gap-2">
+                {/* A <label> points at one form control, and this points at a
+                    row of buttons — so it named nothing. The group carries the
+                    name instead, and each button says whether it is the chosen
+                    one rather than relying on colour alone. */}
+                <span className="text-sm font-medium block mb-2" id="tenure-label">Tenure (Months)</span>
+                <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby="tenure-label">
                   {[6, 12, 24].map(t => (
                     <button
                       key={t}
+                      type="button"
+                      aria-pressed={tenure === t}
                       onClick={() => setTenure(t)}
                       className={`py-2 text-sm font-medium rounded-md border transition-colors ${
                         tenure === t 
@@ -189,8 +196,11 @@ export default function FinancingPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium block mb-2">Assumed Interest Rate</label>
-                <div className="w-full bg-muted/50 border border-border/40 rounded-lg p-3 text-sm text-muted-foreground cursor-not-allowed">
+                {/* Read-only text, not a control, so this is a caption rather
+                    than a label — and nothing here is disabled to be given a
+                    not-allowed cursor. */}
+                <span className="text-sm font-medium block mb-2">Assumed Interest Rate</span>
+                <div className="w-full bg-muted/50 border border-border/40 rounded-lg p-3 text-sm text-muted-foreground">
                   {interestRate}% p.a.
                 </div>
               </div>

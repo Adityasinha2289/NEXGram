@@ -32,6 +32,18 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  /*
+   * Status colours, as tokens rather than palette classes.
+   *
+   * This app follows the operating system's theme, so a fixed Tailwind colour
+   * has to work on a cream page and a near-black one at once, and none of them
+   * do: text-green-700 measured 4.64:1 on the light background but 3.06:1 on
+   * the dark card, while text-green-500 was the other way round at 2.11:1 and
+   * 6.73:1. Every status colour in the app failed WCAG AA in one theme or the
+   * other. These are two values per role, each verified against both surfaces.
+   */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -78,6 +90,11 @@
   --accent-foreground: #0F2A1D;
   
   --destructive: #9B2C2C; /* Reserved semantic color, kept muted */
+  /* 5.35:1 on a white card, 4.95:1 on the page — AA on both. */
+  --success: #1D7A45;
+  /* 5.93:1 and 5.48:1. A yellow light enough to read as "warning" on cream
+     cannot also be legible on it, so this is the darker amber. */
+  --warning: #8A5A00;
   
   /* Subtle borders and rings */
   --border: #AEC3B0;
@@ -122,6 +139,10 @@
   --accent-foreground: #E3EED4;
   
   --destructive: #F56565;
+  /* The light-theme pair inverted: on #0F2A1D these read 8.67:1 and 8.08:1,
+     where the light values managed 3.06:1 and 4.31:1. */
+  --success: #6FD79B;
+  --warning: #E8B44C;
   
   --border: #375534;
   --input: #375534;

@@ -43,7 +43,7 @@ export default function OrderDetailPage() {
   if (error || !order) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-500">Failed to load order details.</p>
+        <p className="text-destructive">Failed to load order details.</p>
         <button onClick={() => router.back()} className="text-primary hover:underline">
           Go back
         </button>
@@ -149,7 +149,7 @@ export default function OrderDetailPage() {
                 }
               }}
               disabled={cancelMutation.isPending}
-              className="w-full border border-red-500/20 text-red-500 hover:bg-red-500/10 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              className="w-full border border-destructive/20 text-destructive hover:bg-destructive/10 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
             >
               {cancelMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
               Cancel Order

@@ -50,7 +50,7 @@ export default function DistributorDashboard() {
   if (error || !data) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3 text-center">
-        <AlertCircle className="h-8 w-8 text-red-500" />
+        <AlertCircle className="h-8 w-8 text-destructive" />
         <p className="font-medium">Could not load your dashboard.</p>
         <p className="text-sm text-muted-foreground max-w-sm">
           {error instanceof Error ? error.message : "Please try again."}

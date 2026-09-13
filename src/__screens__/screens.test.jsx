@@ -24,6 +24,8 @@ import retOrders from './payloads/ret_orders.json';
 import runners from './payloads/runners.json';
 import schemes from './payloads/schemes.json';
 import shops from './payloads/shops.json';
+import products from './payloads/products.json';
+import categories from './payloads/categories.json';
 
 /**
  * Every screen, mounted against the response the real API gave for it.
@@ -69,8 +71,10 @@ const ROUTES = [
   ['/orders', retOrders],
   ['/schemes', schemes],
   ['/loans', loans],
-  ['/categories', []],
-  ['/products', { results: [], total: 0 }],
+  ['/categories', categories],
+  // The real shape is { items, page, page_size, total, has_next }. This said
+  // { results, total }, which no endpoint returns.
+  ['/products', products],
   ['/assistant/status', { configured: false, model: null }],
   ['/auth/clerk/status', { configured: false }],
   ['/auth/me', { id: 'u1', name: 'Ramesh', role: 'retailer', profile_complete: true }],

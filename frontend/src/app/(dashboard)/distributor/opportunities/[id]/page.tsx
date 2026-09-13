@@ -45,7 +45,7 @@ export default function DistributorOpportunityDetailPage() {
   if (error || !opp) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-500">
+        <p className="text-destructive">
           {error instanceof Error ? error.message : "Could not load this opportunity."}
         </p>
         <button onClick={() => router.back()} className="text-primary hover:underline">
@@ -105,13 +105,13 @@ export default function DistributorOpportunityDetailPage() {
                 <p className="text-lg md:text-xl font-light leading-relaxed text-foreground">
                   {opp.explanation.text}
                 </p>
-                <div className="mt-6 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-green-600 bg-green-500/10 px-3 py-1.5 rounded-lg border border-green-500/20">
+                <div className="mt-6 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-success bg-success/10 px-3 py-1.5 rounded-lg border border-success/20">
                   <CheckCircle2 className="h-4 w-4" /> Checked against the evidence below
                 </div>
               </>
             ) : (
               <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+                <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                 <p className="font-light leading-relaxed">
                   No verified summary for this signal. The figures below come straight from the
                   engine and are the reliable account.
