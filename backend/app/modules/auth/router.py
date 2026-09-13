@@ -8,7 +8,7 @@ from app.api.deps import get_current_user, get_db
 from app.core import audit
 from app.core.rate_limit import auth_limiter, client_key, rate_limit_auth
 from app.core.security import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
-from app.modules.auth import password_reset, schemas, service
+from app.modules.auth import clerk, password_reset, schemas, service
 from app.models.users import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -65,6 +65,68 @@ def login_for_access_token(
         entity_id=user.id,
         actor_id=user.id,
         metadata={"ip": client_key(request)},
+        commit=True,
+    )
+    return {
+        "access_token": create_access_token(
+            subject=user.id, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        ),
+        "token_type": "bearer",
+    }
+
+
+@router.get("/clerk/status", summary="Whether Clerk sign-in is available")
+def clerk_status():
+    """Lets the UI hide the Clerk button instead of offering a broken one."""
+    return {"configured": clerk.is_configured()}
+
+
+@router.post(
+    "/clerk",
+    response_model=schemas.Token,
+    dependencies=[Depends(rate_limit_auth)],
+    summary="Exchange a Clerk session token for a NEXGram one",
+)
+def exchange_clerk_token(
+    payload: schemas.ClerkExchange,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Signs someone in with Clerk and hands back this app's own session.
+
+    Clerk's token is checked once, here, and then not used again: what the rest
+    of the API sees is the same NEXGram bearer token that /login issues. That
+    keeps a week-long session on a connection that drops, which a 60-second
+    Clerk token could not.
+    """
+    try:
+        identity = clerk.identify(payload.token)
+    except clerk.ClerkError as exc:
+        audit.record(
+            db,
+            action="auth.clerk_rejected",
+            entity_type="user",
+            entity_id="unknown",
+            metadata={"ip": client_key(request), "reason": str(exc)[:120]},
+            commit=True,
+        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
+
+    user, created = service.link_or_create_clerk_user(
+        db, identity, default_role=(payload.role.value if payload.role else "retailer")
+    )
+
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Yeh account band hai.")
+
+    auth_limiter.reset(f"auth:{client_key(request)}")
+    audit.record(
+        db,
+        action="user.registered" if created else "auth.login",
+        entity_type="user",
+        entity_id=user.id,
+        actor_id=user.id,
+        metadata={"ip": client_key(request), "via": "clerk", "role": user.role},
         commit=True,
     )
     return {

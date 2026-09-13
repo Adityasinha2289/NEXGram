@@ -1,9 +1,52 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import { DEMO_ACCOUNTS } from '../constants/demoAccounts';
+import { ROLE_LIST, ROLES, homeFor } from '../constants/roles';
 import heroImage from '../assets/hero_illustration.jpg';
+
+/**
+ * The front door.
+ *
+ * Rebuilt because it kept saying the same thing. "Retailer bane" appeared in
+ * the hero, again under a funding heading, and again under a story heading —
+ * three buttons, three sets of words, one destination. The retailer-and-
+ * distributor two-column split with its centre divider was hand-written twice,
+ * the three-step diagram was written twice more (once for phones, once for
+ * desktop, and the two had already drifted apart), and "Explore NEXGram"
+ * scrolled to the same section from three places.
+ *
+ * Now each role is described once, from one table, and a demo is offered in
+ * exactly one place. Everything below the hero explains what is behind those
+ * three doors instead of offering them again.
+ */
+const PITCH = {
+  retailer: {
+    heading: 'Apni dukaan ke liye sahi maal.',
+    body: 'Customer jo maangta hai wahi rakho. Stock, sale aur delivery ek jagah — '
+      + 'aur mangwane se pehle poore area ke daam compare.',
+    funding: '₹10 lakh',
+  },
+  distributor: {
+    heading: 'Jahan demand hai, wahan supply.',
+    body: 'Aas-paas ke retailers kya maang rahe hain aur koi de nahi paa raha — '
+      + 'wahi aapka agla order hai.',
+    funding: '₹50 lakh',
+  },
+  customer: {
+    heading: 'Paas ki dukaan, ghar par.',
+    body: 'Dukaan mein abhi jo hai wahi dikhta hai. Shop ka apna ladka cycle par '
+      + 'pahucha deta hai.',
+    funding: null,
+  },
+};
+
+/** The demand-to-supply diagram, in the one markup both shapes need. */
+const FLOW = [
+  { who: 'Retailers', says: 'Kya chahiye' },
+  { who: 'NEXGram', says: 'Demand samjho', lit: true },
+  { who: 'Distributors', says: 'Supply pahuchao' },
+];
 
 export function Landing() {
   const navigate = useNavigate();
@@ -12,21 +55,19 @@ export function Landing() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (currentUser) {
-      navigate(
-        currentUser.role === 'retailer' ? '/retailer/dashboard' : '/distributor/dashboard',
-        { replace: true }
-      );
-    }
+    if (currentUser) navigate(homeFor(currentUser.role), { replace: true });
   }, [currentUser, navigate]);
 
-  const handleDemo = async (role) => {
-    const account = DEMO_ACCOUNTS[role];
-    setPending(role);
+  const handleDemo = async (roleKey) => {
+    const role = ROLES[roleKey];
+    if (!role) return;
+    setPending(roleKey);
     setError(null);
     try {
-      await login(account.mobile, account.password);
-      navigate(role === 'retailer' ? '/retailer/dashboard' : '/distributor/dashboard');
+      // Routed by what the server says the account is, not by which button
+      // was pressed.
+      const user = await login(role.demo.mobile, role.demo.password);
+      navigate(homeFor(user?.role || roleKey));
     } catch (err) {
       setError(err?.message || 'Demo login failed. Please try from the login page.');
     } finally {
@@ -36,291 +77,233 @@ export function Landing() {
 
   return (
     <div className="min-h-screen bg-brand-50 text-brand-900 font-sans selection:bg-brand-300 selection:text-brand-900">
-      {/* 01 — NAVIGATION */}
-      <nav className="sticky top-0 z-50 bg-brand-50/95 backdrop-blur-sm border-b border-brand-900/5 transition-all">
+      {/* 01 — NAVIGATION. Three menu items scrolled between two sections; one
+          link now covers the whole explanation below. */}
+      <nav className="sticky top-0 z-50 bg-brand-50/95 backdrop-blur-sm border-b border-brand-900/5">
         <div className="mx-auto flex max-w-[1240px] items-center justify-between px-6 py-5 lg:px-8">
           <div className="flex items-baseline gap-3">
             <span className="font-display text-2xl font-bold tracking-tight text-brand-900">NEXGram</span>
             <span className="hidden sm:inline-block text-sm font-medium text-brand-500">Gaon ka Growth Partner</span>
           </div>
-          <div className="hidden md:flex items-center gap-10 text-brand-900 font-medium">
-            <button onClick={() => document.getElementById('story').scrollIntoView({behavior: 'smooth'})} className="hover:text-brand-500 transition-colors cursor-pointer">Retailers</button>
-            <button onClick={() => document.getElementById('story').scrollIntoView({behavior: 'smooth'})} className="hover:text-brand-500 transition-colors cursor-pointer">Distributors</button>
-            <button onClick={() => document.getElementById('connection').scrollIntoView({behavior: 'smooth'})} className="hover:text-brand-500 transition-colors cursor-pointer">About</button>
-          </div>
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => document.getElementById('story').scrollIntoView({behavior: 'smooth'})}
-              className="inline-flex items-center font-medium text-brand-900 hover:text-brand-500 transition-colors group cursor-pointer"
+          <div className="flex items-center gap-6">
+            <a
+              href="#kaise"
+              className="hidden font-medium text-brand-900 transition-colors hover:text-brand-500 sm:inline-block"
             >
-              Explore NEXGram <ArrowRight size={16} className="ml-1.5 transition-transform group-hover:translate-x-1" />
-            </button>
+              Kaise kaam karta hai
+            </a>
+            {/* Signing in was reachable only by typing /login. A returning
+                shopkeeper should not have to know the URL of their own app. */}
+            <Link
+              to="/login"
+              className="inline-flex items-center rounded-lg bg-brand-900 px-5 py-2.5 font-medium text-brand-50 transition-all hover:bg-brand-800"
+            >
+              Login
+            </Link>
           </div>
         </div>
       </nav>
 
-      {/* 02 — HERO */}
-      <section className="mx-auto max-w-[1240px] px-6 lg:px-8 pt-16 pb-24 lg:pt-24 lg:pb-32">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-12 items-center">
-          <div className="max-w-[480px]">
+      {/* 02 — HERO. The only place a demo is offered. */}
+      <section className="mx-auto max-w-[1240px] px-6 lg:px-8 pt-16 pb-20 lg:pt-24 lg:pb-28">
+        <div className="grid lg:grid-cols-2 gap-14 lg:gap-12 items-center">
+          <div className="max-w-[520px]">
             <p className="text-sm font-semibold tracking-widest uppercase text-brand-500 mb-6">
-              Gaon ka Business. Ab Aur Bada.
+              Gaon ka business. Ab aur bada.
             </p>
-            <h1 className="font-display text-6xl sm:text-7xl font-bold leading-[1.05] text-brand-900 tracking-tight mb-8">
-              Apni Dukaan.<br/>
-              Ab Aur Bada Socho.
+            <h1 className="font-display text-5xl sm:text-6xl font-bold leading-[1.05] text-brand-900 tracking-tight mb-6">
+              Apni dukaan.<br />
+              Ab aur bada socho.
             </h1>
             <p className="text-lg text-brand-900/80 leading-relaxed mb-10">
-              NEXGram retailers aur distributors ko local demand, sahi products aur trusted suppliers ke saath jodta hai.
+              Local demand, sahi products aur bharosemand suppliers — ek hi jagah.
             </p>
-            <div className="flex flex-col items-start gap-4">
-              <button 
-                onClick={() => document.getElementById('story').scrollIntoView({behavior: 'smooth'})}
-                className="inline-flex items-center justify-center rounded-lg bg-brand-900 text-brand-50 px-7 py-3.5 font-medium transition-all hover:bg-brand-800 hover:-translate-y-0.5 cursor-pointer shadow-sm"
-              >
-                Explore NEXGram <ArrowRight size={18} className="ml-2" />
-              </button>
-              <p className="text-sm text-brand-500 font-medium">
-                Retailer ho ya distributor — apne business se shuru karo.
-              </p>
+
+            {/*
+              * The three doors, on the first screen.
+              *
+              * A visitor is one of three things and knows which; making them
+              * scroll to find out where they belong is a question the page can
+              * answer for them. Each card signs in to that world's demo, with
+              * a real login underneath for people who already have an account.
+              */}
+            <p className="text-sm font-semibold uppercase tracking-widest text-brand-500 mb-4">
+              Aap kaun hain?
+            </p>
+
+            <div className="flex flex-col gap-2.5">
+              {ROLE_LIST.map((role) => {
+                const Icon = role.icon;
+                const isPending = pending === role.key;
+                return (
+                  <div
+                    key={role.key}
+                    className="flex items-center gap-4 rounded-lg border border-brand-900/10 bg-white/60 px-4 py-3.5 transition-all hover:border-brand-900/25 hover:bg-white"
+                  >
+                    <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-lg bg-brand-900 text-brand-50">
+                      <Icon size={18} strokeWidth={2} />
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-brand-900">{role.label}</p>
+                      <p className="text-sm leading-snug text-brand-900/70">{role.tagline}</p>
+                    </div>
+
+                    <div className="flex flex-shrink-0 flex-col items-end gap-1">
+                      <button
+                        type="button"
+                        disabled={Boolean(pending)}
+                        onClick={() => handleDemo(role.key)}
+                        className="inline-flex items-center rounded-lg bg-brand-900 px-4 py-2 text-sm font-medium text-brand-50 transition-all hover:bg-brand-800 disabled:opacity-50 cursor-pointer"
+                      >
+                        {isPending ? 'Khul raha hai...' : 'Demo kholo'}
+                        {!isPending && <ArrowRight size={15} className="ml-1.5" />}
+                      </button>
+                      <Link
+                        to={role.loginPath}
+                        className="text-xs font-medium text-brand-500 hover:text-brand-900 hover:underline"
+                      >
+                        Login karein
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+
+            {/* Beside the buttons that can fail, rather than two sections
+                further down where it used to sit. */}
+            {error && (
+              <p role="alert" className="mt-4 text-sm font-medium text-red-700">{error}</p>
+            )}
           </div>
+
           <div className="w-full lg:ml-auto">
-            <img 
-              src={heroImage} 
-              alt="Rural Indian kirana store and supply chain" 
+            <img
+              src={heroImage}
+              alt="Rural Indian kirana store and supply chain"
               className="w-full h-auto object-cover rounded-lg shadow-sm"
             />
           </div>
         </div>
       </section>
 
-      {/* 03 — FUNDING OPPORTUNITY */}
-      <section className="border-t border-brand-900/5">
-        <div className="mx-auto max-w-[1240px] px-6 lg:px-8 py-24 lg:py-32">
-          <div className="text-center mb-20 lg:mb-24">
-            <p className="text-xs font-semibold tracking-widest uppercase text-brand-500 mb-5">
-              Business Badhane Ka Mauka
-            </p>
-            <h2 className="font-display text-4xl sm:text-5xl font-bold text-brand-900 leading-tight">
-              Apna business<br className="hidden sm:block" /> shuru ya badhane ke liye.
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-16 md:gap-24 relative max-w-4xl mx-auto">
-            {/* Desktop Divider */}
-            <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-brand-900/10 -translate-x-1/2"></div>
-            
-            {/* Retailer Funding */}
-            <div className="flex flex-col items-center md:items-start text-center md:text-left pr-0 md:pr-12">
-              <p className="font-semibold text-brand-900 uppercase tracking-widest text-sm mb-6">Retailers</p>
-              
-              <div className="flex flex-col gap-1 mb-8">
-                <span className="font-display text-5xl lg:text-6xl font-bold text-brand-900 tracking-tight">₹10 LAKH</span>
-                <span className="font-display text-2xl font-bold text-brand-900 tracking-widest">TAK MILENGE</span>
-              </div>
-              
-              <p className="text-lg text-brand-900/90 leading-relaxed mb-8 font-medium max-w-sm">
-                Apni dukaan shuru ya badhane ke liye.
-              </p>
-              
-              <button
-                type="button"
-                disabled={Boolean(pending)}
-                onClick={() => handleDemo('retailer')}
-                className="group inline-flex items-center font-medium text-brand-900 hover:text-brand-500 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {pending === 'retailer' ? 'Khul raha hai...' : 'Retailer Bane'} <ArrowRight size={18} className="ml-2 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
-
-            {/* Distributor Funding */}
-            <div className="flex flex-col items-center md:items-start text-center md:text-left pl-0 md:pl-12">
-              <p className="font-semibold text-brand-900 uppercase tracking-widest text-sm mb-6">Distributors</p>
-              
-              <div className="flex flex-col gap-1 mb-8">
-                <span className="font-display text-5xl lg:text-6xl font-bold text-brand-900 tracking-tight">₹50 LAKH</span>
-                <span className="font-display text-2xl font-bold text-brand-900 tracking-widest">TAK MILENGE</span>
-              </div>
-              
-              <p className="text-lg text-brand-900/90 leading-relaxed mb-8 font-medium max-w-sm">
-                Apna distribution business shuru ya badhane ke liye.
-              </p>
-              
-              <button
-                type="button"
-                disabled={Boolean(pending)}
-                onClick={() => handleDemo('distributor')}
-                className="group inline-flex items-center font-medium text-brand-900 hover:text-brand-500 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {pending === 'distributor' ? 'Khul raha hai...' : 'Distributor Bane'} <ArrowRight size={18} className="ml-2 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
-          </div>
-          
-          <div className="text-center mt-16 md:mt-24">
-            <p className="text-sm font-medium text-brand-500">
-              Eligible businesses ke liye sarkari financing. Eligibility aur scheme ke niyamon ke anusaar.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 04 — RETAILER + DISTRIBUTOR STORY */}
-      <section id="story" className="border-t border-brand-900/5">
-        <div className="mx-auto max-w-[1240px] px-6 lg:px-8 py-24 lg:py-32">
-          <div className="grid md:grid-cols-2 gap-16 md:gap-24 relative">
-            <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-brand-900/5 -translate-x-1/2"></div>
-            
-            <div className="pr-0 md:pr-12">
-              <p className="font-display text-2xl text-brand-900 mb-6 font-semibold">Retailer</p>
-              <h2 className="text-3xl sm:text-4xl font-medium text-brand-900 leading-tight mb-6">
-                Apni dukaan ke liye sahi maal dhoondo.
-              </h2>
-              <p className="text-lg text-brand-900/70 leading-relaxed mb-10 min-h-[84px] max-w-md">
-                Customer jo maangta hai, wahi becho. Naye products asani se source karo aur sahi waqt par stock mangwao.
-              </p>
-              <button
-                type="button"
-                disabled={Boolean(pending)}
-                onClick={() => handleDemo('retailer')}
-                className="group inline-flex items-center text-lg font-medium text-brand-900 hover:text-brand-500 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {pending === 'retailer' ? 'Khul raha hai...' : 'Retailer ke liye'} <ArrowRight size={20} className="ml-2 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
-
-            <div className="pl-0 md:pl-12">
-              <p className="font-display text-2xl text-brand-900 mb-6 font-semibold">Distributor</p>
-              <h2 className="text-3xl sm:text-4xl font-medium text-brand-900 leading-tight mb-6">
-                Jahan demand hai, wahan apni supply pahuchao.
-              </h2>
-              <p className="text-lg text-brand-900/70 leading-relaxed mb-10 min-h-[84px] max-w-md">
-                Naye retailers dhoondo aur apna inventory sahi jagah par, bina delay ke deliver karo.
-              </p>
-              <button
-                type="button"
-                disabled={Boolean(pending)}
-                onClick={() => handleDemo('distributor')}
-                className="group inline-flex items-center text-lg font-medium text-brand-900 hover:text-brand-500 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {pending === 'distributor' ? 'Khul raha hai...' : 'Distributor ke liye'} <ArrowRight size={20} className="ml-2 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
-          </div>
-          {error && <p className="text-center mt-12 text-brand-900 font-medium bg-brand-300/30 inline-block px-4 py-2 rounded-md">{error}</p>}
-        </div>
-      </section>
-
-      {/* 05 — CONNECTION STORY & INTELLIGENCE PROOF */}
-      <section id="connection" className="bg-brand-900 text-brand-50 py-24 lg:py-32 rounded-t-[3rem]">
-        <div className="mx-auto max-w-[1024px] px-6 lg:px-8">
-          <div className="text-center mb-20 lg:mb-24">
-            <p className="text-xs font-semibold tracking-widest uppercase text-brand-300 mb-5">
-              Demand Se Supply Tak
-            </p>
-            <h2 className="font-display text-4xl sm:text-5xl font-bold leading-tight mb-6">
-              Jahan zaroorat hai,<br className="hidden sm:block" />wahan business ka mauka hai.
-            </h2>
-            <p className="text-lg text-brand-50/80 font-medium max-w-2xl mx-auto">
-              Retailers ki zaroorat aur distributors ki supply ko NEXGram ek jagah laata hai.
-            </p>
-          </div>
-
-          <div className="relative max-w-3xl mx-auto">
-            <div className="hidden md:block relative">
-              <div className="absolute top-8 left-0 right-0 h-px bg-brand-50/15"></div>
-              
-              <div className="grid grid-cols-3 gap-8 text-center relative z-10">
-                <div className="flex flex-col items-center">
-                  <div className="w-4 h-4 rounded-full bg-brand-900 border-2 border-brand-300 mb-6"></div>
-                  <h3 className="font-display text-xl font-bold mb-2">Retailers</h3>
-                  <p className="text-brand-300 font-medium text-sm">"Kya chahiye?"</p>
-                </div>
-                
-                <div className="flex flex-col items-center">
-                  <div className="w-4 h-4 rounded-full bg-brand-300 mb-6 shadow-[0_0_12px_rgba(174,195,176,0.3)]"></div>
-                  <h3 className="font-display text-xl font-bold mb-2">NEXGram</h3>
-                  <p className="text-brand-300 font-medium text-sm">"Demand samjho"</p>
-                </div>
-                
-                <div className="flex flex-col items-center">
-                  <div className="w-4 h-4 rounded-full bg-brand-900 border-2 border-brand-300 mb-6"></div>
-                  <h3 className="font-display text-xl font-bold mb-2">Distributors</h3>
-                  <p className="text-brand-300 font-medium text-sm">"Supply pahuchao"</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="md:hidden flex flex-col items-center text-center space-y-10 relative">
-              <div className="absolute top-0 bottom-0 left-1/2 w-px bg-brand-50/15 -translate-x-1/2"></div>
-              
-              <div className="relative z-10 flex flex-col items-center bg-brand-900 py-2">
-                <div className="w-3 h-3 rounded-full bg-brand-900 border-2 border-brand-300 mb-3"></div>
-                <h3 className="font-display text-lg font-bold mb-1">Retailers</h3>
-                <p className="text-brand-300 text-xs font-medium">"Demand"</p>
-              </div>
-
-              <div className="relative z-10 flex flex-col items-center bg-brand-900 py-2">
-                <div className="w-3 h-3 rounded-full bg-brand-300 mb-3"></div>
-                <h3 className="font-display text-lg font-bold mb-1">NEXGram</h3>
-              </div>
-
-              <div className="relative z-10 flex flex-col items-center bg-brand-900 py-2">
-                <div className="w-3 h-3 rounded-full bg-brand-900 border-2 border-brand-300 mb-3"></div>
-                <h3 className="font-display text-lg font-bold mb-1">Distributors</h3>
-                <p className="text-brand-300 text-xs font-medium">"Supply"</p>
-              </div>
-            </div>
-
-            <div className="mt-20 pt-10 border-t border-brand-50/10 max-w-sm mx-auto">
-              <div className="flex items-center justify-between mb-5">
-                <span className="font-display text-xl font-bold text-brand-50">Paneer</span>
-                <span className="text-xs font-medium text-brand-300 uppercase tracking-widest">Palampur Market</span>
-              </div>
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-brand-50">
-                  <span className="font-medium">6 retailers</span>
-                  <span className="text-brand-300 text-sm">looking</span>
-                </div>
-                <div className="flex justify-between text-brand-50">
-                  <span className="font-medium">2 suppliers</span>
-                  <span className="text-brand-300 text-sm">nearby</span>
-                </div>
-              </div>
-              <div className="text-sm font-medium text-brand-300 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-300"></span>
-                Supply gap found → Business opportunity
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 06 — FINAL CTA */}
-      <section className="bg-brand-50 py-24 lg:py-32 text-center">
-        <div className="mx-auto max-w-[800px] px-6 lg:px-8">
-          <h2 className="font-display text-4xl sm:text-5xl font-bold text-brand-900 mb-6">
-            Apne area ke business ko<br className="hidden sm:block" /> aur aage badhao.
+      {/* 03 — WHAT IS BEHIND EACH DOOR. Replaces two sections that both split
+          retailer from distributor and both ended in a button the hero already
+          has. The funding numbers now sit with the role they apply to instead
+          of owning a headline of their own. */}
+      <section id="kaise" className="border-t border-brand-900/5">
+        <div className="mx-auto max-w-[1240px] px-6 lg:px-8 py-20 lg:py-28">
+          <h2 className="font-display text-4xl sm:text-5xl font-bold text-brand-900 leading-tight mb-16 max-w-2xl">
+            Teen taraf ka business, ek jagah.
           </h2>
-          <p className="text-lg text-brand-900/70 leading-relaxed mb-10 max-w-xl mx-auto">
-            Retailer ho ya distributor — NEXGram ke saath local business ko smarter tareeke se grow karo.
+
+          <div className="grid md:grid-cols-3 gap-12 md:gap-10">
+            {ROLE_LIST.map((role) => {
+              const pitch = PITCH[role.key];
+              const Icon = role.icon;
+              return (
+                <div key={role.key} className="flex flex-col">
+                  <span className="mb-5 grid h-11 w-11 place-items-center rounded-lg bg-brand-900/5 text-brand-900">
+                    <Icon size={20} strokeWidth={1.75} />
+                  </span>
+                  <p className="text-sm font-semibold uppercase tracking-widest text-brand-500 mb-3">
+                    {role.label}
+                  </p>
+                  <h3 className="text-2xl font-medium text-brand-900 leading-snug mb-4">
+                    {pitch.heading}
+                  </h3>
+                  <p className="text-brand-900/70 leading-relaxed">{pitch.body}</p>
+
+                  {pitch.funding && (
+                    <p className="mt-5 border-t border-brand-900/10 pt-5">
+                      <span className="font-display text-3xl font-bold tracking-tight text-brand-900">
+                        {pitch.funding}
+                      </span>
+                      <span className="ml-2 text-sm font-medium text-brand-900/60">
+                        tak ka sarkari loan
+                      </span>
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="mt-14 text-sm font-medium text-brand-500">
+            Sarkari financing eligibility aur scheme ke niyamon ke anusaar. NEXGram khud loan nahi
+            deta — hum aapko sahi scheme tak pahuchate hain.
           </p>
-          <button 
-            onClick={() => document.getElementById('story').scrollIntoView({behavior: 'smooth'})}
-            className="inline-flex items-center justify-center rounded-lg bg-brand-900 text-brand-50 px-7 py-3.5 font-medium transition-all hover:bg-brand-800 hover:-translate-y-0.5 cursor-pointer shadow-sm"
-          >
-            Explore NEXGram <ArrowRight size={18} className="ml-2" />
-          </button>
         </div>
       </section>
-      
-      <footer className="py-10 text-center text-sm font-medium text-brand-900/40 bg-brand-50 border-t border-brand-900/5">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-6">
-          <span className="font-display font-bold text-brand-900/60">NEXGram</span>
-          <div className="hidden sm:block w-1 h-1 rounded-full bg-brand-900/20"></div>
-          <span>Gaon ka Growth Partner</span>
+
+      {/* 04 — HOW THE THREE MEET. */}
+      <section className="bg-brand-900 text-brand-50 py-20 lg:py-28 rounded-t-[3rem]">
+        <div className="mx-auto max-w-[1024px] px-6 lg:px-8">
+          <div className="mb-16 max-w-2xl">
+            <p className="text-xs font-semibold tracking-widest uppercase text-brand-300 mb-5">
+              Demand se supply tak
+            </p>
+            <h2 className="font-display text-4xl sm:text-5xl font-bold leading-tight mb-5">
+              Jahan zaroorat hai, wahan mauka hai.
+            </h2>
+            <p className="text-lg text-brand-50/80 font-medium">
+              Har dukaan jo batati hai ki uske paas kya nahi hai, wahi aas-paas ke
+              distributor ka agla order ban jata hai.
+            </p>
+          </div>
+
+          {/* One markup for both shapes — a row on a desktop, a column on a
+              phone. It used to be written out twice and the copies had drifted:
+              the phone version had quietly lost a label. */}
+          <ol className="grid md:grid-cols-3 gap-8 md:gap-6 mb-16">
+            {FLOW.map((step) => (
+              <li key={step.who} className="flex items-center gap-4 md:flex-col md:text-center">
+                <span
+                  className={[
+                    'h-3.5 w-3.5 flex-shrink-0 rounded-full md:mb-4',
+                    step.lit
+                      ? 'bg-brand-300 shadow-[0_0_12px_rgba(174,195,176,0.4)]'
+                      : 'border-2 border-brand-300 bg-brand-900',
+                  ].join(' ')}
+                />
+                <span>
+                  <span className="block font-display text-xl font-bold">{step.who}</span>
+                  <span className="block text-sm font-medium text-brand-300">{step.says}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          <div className="max-w-sm rounded-xl border border-brand-50/15 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <span className="font-display text-xl font-bold text-brand-50">Paneer</span>
+              <span className="text-xs font-medium text-brand-300 uppercase tracking-widest">Palampur Market</span>
+            </div>
+            <div className="space-y-3 mb-5">
+              <p className="flex justify-between text-brand-50">
+                <span className="font-medium">6 retailers</span>
+                <span className="text-brand-300 text-sm">maang rahe hain</span>
+              </p>
+              <p className="flex justify-between text-brand-50">
+                <span className="font-medium">2 suppliers</span>
+                <span className="text-brand-300 text-sm">aas-paas</span>
+              </p>
+            </div>
+            <p className="text-sm font-medium text-brand-300 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-300"></span>
+              Supply gap mila → business ka mauka
+            </p>
+          </div>
         </div>
+      </section>
+
+      <footer className="py-10 text-center text-sm font-medium text-brand-900/40 bg-brand-50 border-t border-brand-900/5">
+        <p className="mb-2">
+          <span className="font-display font-bold text-brand-900/60">NEXGram</span>
+          <span className="mx-2 text-brand-900/20">·</span>
+          Gaon ka Growth Partner
+        </p>
         <p>&copy; {new Date().getFullYear()} NEXGram. All rights reserved.</p>
       </footer>
     </div>

@@ -107,3 +107,56 @@ describe('fetchApi', () => {
     expect(localStorage.getItem('nexgram_access_token')).toBe('still-good');
   });
 });
+
+describe('responses with no body', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('returns null on a 204 instead of failing to parse an empty body', async () => {
+    // DELETE /distributors/me/catalogue/{id} answers 204. response.json() on an
+    // empty body rejects with a SyntaxError, so every successful delete used to
+    // surface to the user as a failure while the row vanished server-side.
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+      json: () => Promise.reject(new SyntaxError('Unexpected end of JSON input')),
+    }));
+
+    await expect(fetchApi('/thing', { method: 'DELETE' })).resolves.toBeNull();
+  });
+
+  it('returns null when the server declares a zero-length body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-length': '0' }),
+      json: () => Promise.reject(new SyntaxError('Unexpected end of JSON input')),
+    }));
+
+    await expect(fetchApi('/thing')).resolves.toBeNull();
+  });
+});
+
+describe('error messages', () => {
+  it('flattens a FastAPI validation error into a sentence', async () => {
+    // A 422 detail is a list of objects; rendering it raw showed the user
+    // "[object Object]".
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      headers: new Headers(),
+      json: () => Promise.resolve({
+        detail: [
+          { loc: ['body', 'quantity'], msg: 'Input should be greater than 0' },
+          { loc: ['body', 'items'], msg: 'List should have at least 1 item' },
+        ],
+      }),
+    }));
+
+    await expect(fetchApi('/orders', { method: 'POST' })).rejects.toThrow(
+      'Input should be greater than 0. List should have at least 1 item',
+    );
+  });
+});

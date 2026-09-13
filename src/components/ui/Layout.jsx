@@ -2,6 +2,7 @@ import styles from './Layout.module.css';
 import { TopNav } from './TopNav';
 import { BottomNav } from './BottomNav';
 import { ConnectionBanner } from './ConnectionBanner';
+import { ChatWidget } from '../assistant/ChatWidget';
 
 /**
  * The application shell.
@@ -38,6 +39,11 @@ export function Layout({
         </div>
       </div>
       {showBottomNav && <BottomNav role={role} />}
+
+      {/* On every signed-in screen rather than on a page of its own: a question
+          arrives while the shopkeeper is looking at something else, and making
+          them navigate away to ask it means they mostly will not. */}
+      <ChatWidget role={role} />
     </div>
   );
 }

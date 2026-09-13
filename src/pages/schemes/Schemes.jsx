@@ -8,6 +8,26 @@ import { SkeletonList } from '../../components/ui/Skeleton';
 import { schemesApi } from '../../services/api/schemesApi';
 import { useApiResource } from '../../hooks/useApiResource';
 
+/**
+ * Where to actually apply.
+ *
+ * `applyAt` is prose for the schemes that are applied for in person ("Nearest
+ * bank branch or https://..."), so using it as an href produced a dead link on
+ * half the catalogue. The URL is lifted out of the sentence, `source` is the
+ * fallback, and the prose itself is shown as text beside the button.
+ */
+const URL_IN_TEXT = /https?:\/\/[^\s,)]+/;
+
+function applyLink(scheme) {
+  const fromApplyAt = URL_IN_TEXT.exec(scheme.applyAt || '')?.[0];
+  return fromApplyAt || URL_IN_TEXT.exec(scheme.source || '')?.[0] || null;
+}
+
+function applyNote(scheme) {
+  const text = (scheme.applyAt || '').replace(URL_IN_TEXT, '').replace(/\s*or\s*$/i, '').trim();
+  return text || null;
+}
+
 const CHECK_STATE = {
   met: { icon: Check, className: 'text-success', label: 'Poora hota hai' },
   not_met: { icon: X, className: 'text-danger', label: 'Poora nahi hota' },
@@ -111,7 +131,7 @@ export function Schemes() {
                   <div className="flex flex-col gap-5 border-t border-border bg-surface-muted px-4 py-4 lg:grid lg:grid-cols-2 lg:gap-8">
                     <div className="flex flex-col gap-2.5">
                       <h4 className="eyebrow">Criteria</h4>
-                      {scheme.checks.map((check) => {
+                      {(scheme.checks || []).map((check) => {
                         const state = CHECK_STATE[check.status] || CHECK_STATE.self_declare;
                         const Icon = state.icon;
                         return (
@@ -139,7 +159,7 @@ export function Schemes() {
                       <div>
                       <h4 className="eyebrow mb-2">Documents chahiye</h4>
                       <ul className="flex flex-wrap gap-1.5">
-                        {scheme.documents.map((doc) => (
+                        {(scheme.documents || []).map((doc) => (
                           <li
                             key={doc}
                             className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-2xs text-text-secondary"
@@ -152,14 +172,22 @@ export function Schemes() {
 
                       <p className="text-2xs leading-snug text-text-muted">{scheme.disclaimer}</p>
 
-                      <a
-                        href={scheme.applyAt}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-text-inverse transition-colors hover:bg-primary-hover sm:self-start"
-                      >
-                        Official portal par jayein <ExternalLink size={15} strokeWidth={2} />
-                      </a>
+                      {applyNote(scheme) && (
+                        <p className="text-2xs leading-snug text-text-secondary">
+                          Apply: {applyNote(scheme)}
+                        </p>
+                      )}
+
+                      {applyLink(scheme) && (
+                        <a
+                          href={applyLink(scheme)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-text-inverse transition-colors hover:bg-primary-hover sm:self-start"
+                        >
+                          Official portal par jayein <ExternalLink size={15} strokeWidth={2} />
+                        </a>
+                      )}
                     </div>
                   </div>
                 )}

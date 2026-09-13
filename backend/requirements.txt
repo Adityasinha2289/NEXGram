@@ -2,6 +2,12 @@ fastapi
 uvicorn
 sqlalchemy
 alembic
+# The Postgres driver. docker-compose.yml and every hosted deployment use a
+# postgresql+psycopg2:// URL, and without this SQLAlchemy raises
+# ModuleNotFoundError the moment it tries to connect — the app only ever ran
+# because SQLite needs no driver. The -binary wheel avoids needing a compiler
+# on hosts that build from requirements.txt rather than the Dockerfile.
+psycopg2-binary
 pydantic
 pydantic-settings
 pytest

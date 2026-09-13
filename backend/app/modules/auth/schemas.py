@@ -5,6 +5,8 @@ from enum import Enum
 class RoleEnum(str, Enum):
     retailer = "retailer"
     distributor = "distributor"
+    # A household buying from a nearby shop through the storefront.
+    customer = "customer"
     admin = "admin"
 
 class UserCreate(BaseModel):
@@ -17,6 +19,19 @@ class UserCreate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class ClerkExchange(BaseModel):
+    """Trades a Clerk session token for a NEXGram one.
+
+    `role` is consulted only when this Clerk identity has never been seen here
+    and an account has to be created. For anyone who already exists, the role
+    stored on their account wins — the same rule the login screens follow, so
+    that arriving through the wrong door cannot change what someone is.
+    """
+
+    token: str
+    role: Optional[RoleEnum] = None
 
 class UserResponse(BaseModel):
     id: str

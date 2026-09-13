@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.core import notifications
 from app.core.database import engine
 from app.core.logging_config import RequestContextMiddleware, configure_logging, request_id_var
+from app.modules.assistant import service as assistant
 
 configure_logging()
 logger = logging.getLogger("nexgram")
@@ -29,7 +30,16 @@ async def lifespan(_app: FastAPI):
             "No notification provider configured: password reset codes will not "
             "reach users. Wire a NotificationChannel before real signups."
         )
+    # One HTTP client for the whole process. A fresh one per chat message pays
+    # DNS, TCP and a TLS handshake before Google reads a word - easily 200ms on
+    # a slow link, on the single request where latency is most visible.
+    assistant.open_client()
+    if not assistant.is_configured():
+        logger.info("Assistant disabled: no GEMINI_API_KEY set")
+
     yield
+
+    await assistant.close_client()
     logger.info("NEXGram API shutting down")
 
 

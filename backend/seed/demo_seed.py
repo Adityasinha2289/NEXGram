@@ -35,6 +35,13 @@ from app.models import (
     User,
 )
 from app.models.commerce import Order, OrderItem, OrderStatusHistory, RetailerDistributorRelationship
+from app.models.retail import (
+    CustomerProfile,
+    DeliveryRunner,
+    InventoryBatch,
+    RetailerInventory,
+    StockMovement,
+)
 
 DEMO_PASSWORD = "demo1234"
 
@@ -601,6 +608,132 @@ def wipe(db):
     db.commit()
 
 
+# --------------------------------------------------------------------------
+# The shop floor
+# --------------------------------------------------------------------------
+#
+# Everything above models the wholesale side. This is the shop itself: what is
+# on the shelf, how fast it moves, and who buys it. Without it the inventory,
+# voice, restock and storefront features all open on an empty screen, which
+# reads as "broken" rather than "no data yet".
+
+# variant key -> (shelf qty, cost, price, reorder level, shelf life days, sold/day)
+#
+# The shelf life numbers are what make the expiry feature demonstrable: milk and
+# curd turn over in days, atta and salt keep for months.
+SHELF = [
+    ("milk:500ml",   48, 24.0,  30.0, 12, 4,  6.0),
+    ("curd:400g",    20, 30.0,  40.0,  6, 5,  2.5),
+    ("paneer:200g",  10, 62.0,  80.0,  6, 6,  1.5),
+    ("butter:100g",  14, 52.0,  62.0,  6, 60, 1.0),
+    ("atta:5kg",     18, 210.0, 245.0, 5, 180, 0.8),
+    ("sugar:1kg",    25, 44.0,  52.0,  8, 365, 1.2),
+    ("salt:1kg",     30, 20.0,  26.0,  8, 365, 0.6),
+    ("rice:5kg",      9, 320.0, 370.0, 4, 365, 0.5),
+]
+
+# The two lines deliberately left thin, so the restock plan has something
+# urgent to say the moment the demo opens.
+RUNNING_LOW = {"milk:500ml", "curd:400g"}
+
+
+def build_shop_floor(db, retailers, variants):
+    """Stocks the demo retailer's shelf and gives it a month of sales history.
+
+    History matters more than stock here: the restock plan, the days-of-cover
+    figure and the expiry risk are all measured from the movement ledger, so a
+    shelf with no past sales produces a screen full of nulls.
+    """
+    shop = retailers["ret_01"]
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    today = now.date()
+
+    rows = 0
+    for key, quantity, cost, price, reorder_level, shelf_life, per_day in SHELF:
+        variant = variants[key]
+        if key in RUNNING_LOW:
+            quantity = max(1, int(per_day))  # under a day of cover
+
+        row = RetailerInventory(
+            retailer_id=shop.id,
+            product_id=variant.product_id,
+            product_variant_id=variant.id,
+            quantity=quantity,
+            unit_cost=cost,
+            selling_price=price,
+            reorder_level=reorder_level,
+            shelf_life_days=shelf_life,
+            is_listed_online=True,
+        )
+        db.add(row)
+        db.flush()
+
+        # Two batches for the perishables, one of them close to its date, so
+        # FEFO and the expiry warning both have something real to act on.
+        if shelf_life <= 7 and quantity > 2:
+            near = quantity // 2
+            db.add(InventoryBatch(
+                inventory_id=row.id, quantity=near, unit_cost=cost,
+                received_on=today - timedelta(days=max(1, shelf_life - 2)),
+                expires_on=today + timedelta(days=1),
+            ))
+            db.add(InventoryBatch(
+                inventory_id=row.id, quantity=quantity - near, unit_cost=cost,
+                received_on=today, expires_on=today + timedelta(days=shelf_life),
+            ))
+        else:
+            db.add(InventoryBatch(
+                inventory_id=row.id, quantity=quantity, unit_cost=cost,
+                received_on=today,
+                expires_on=today + timedelta(days=shelf_life) if shelf_life else None,
+            ))
+
+        # A month of counter sales, dated back day by day. Engineered rather
+        # than random so the rates - and every suggestion derived from them -
+        # are the same on every machine.
+        for day in range(1, 29):
+            sold = round(per_day * (1.3 if day % 7 in (0, 6) else 0.9))
+            if sold <= 0:
+                continue
+            db.add(StockMovement(
+                retailer_id=shop.id,
+                inventory_id=row.id,
+                quantity_delta=-sold,
+                reason="sale_counter",
+                unit_price=price,
+                total_value=round(sold * price, 2),
+                created_at=now - timedelta(days=day),
+            ))
+        rows += 1
+
+    db.add(DeliveryRunner(
+        id="runner_demo", retailer_id=shop.id,
+        name="Chotu", mobile="9000009999", mode="cycle",
+    ))
+
+    # One household, two streets from the demo shop, so the storefront has a
+    # signed-in customer to browse as.
+    customer_user = User(
+        id="user_cust_01", role="customer", name="Sunita Devi",
+        mobile="9500000001", email="cust_01@nexgram.demo",
+        password_hash=password_hash(), is_active=True,
+    )
+    db.add(customer_user)
+    db.flush()
+    shop_location = db.query(Location).filter(Location.id == shop.location_id).first()
+    db.add(CustomerProfile(
+        id="cust_01", user_id=customer_user.id, location_id=shop.location_id,
+        address_line="Ward 4, Palampur",
+        landmark="Peepal ped ke paas",
+        # ~400 m from the market, inside the cycle radius.
+        latitude=(shop_location.latitude + 0.003) if shop_location else None,
+        longitude=(shop_location.longitude + 0.002) if shop_location else None,
+    ))
+
+    db.commit()
+    return rows
+
+
 def run_seed(reset: bool = False):
     db = SessionLocal()
     try:
@@ -618,6 +751,7 @@ def run_seed(reset: bool = False):
         distributors = build_distributors(db, variants)
         retailers = build_retailers(db)
         orders = build_order_history(db, retailers, distributors)
+        shelf_rows = build_shop_floor(db, retailers, variants)
 
         # Demand signals, supply gaps and opportunities are derived, not seeded.
         # Without this the database looks complete and every screen that reads
@@ -633,12 +767,14 @@ def run_seed(reset: bool = False):
         print(f"  distributors {len(DISTRIBUTORS)}")
         print(f"  retailers    {len(RETAILERS)}")
         print(f"  orders       {orders}")
+        print(f"  shelf lines  {shelf_rows}  (with 28 days of counter sales)")
         print(f"  signals      {pipeline['demand']['signals_generated']}")
         print(f"  supply gaps  {pipeline['supply_gaps']['gaps_generated']}")
         print(f"  opportunities{pipeline['opportunities'].get('opportunities_generated', '?'):>4}")
         print(f"\nAll demo accounts use password: {DEMO_PASSWORD}")
         print("  retailer   9000000001   (Gupta Kirana Store, Palampur)")
         print("  distributor 9100000002  (Himachal Dairy Co, Palampur)")
+        print("  customer   9500000001   (Sunita Devi, 400m from Gupta Kirana)")
     finally:
         db.close()
 

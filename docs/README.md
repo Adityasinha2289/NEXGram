@@ -23,3 +23,7 @@ For how to work on it, read [../CONTRIBUTING.md](../CONTRIBUTING.md).
 | `NEXGRAM_PRODUCTION_INTELLIGENCE.md` | the backend pipeline | yes |
 | `NEXGRAM_PRODUCTION_OPPORTUNITY_ENGINE.md` | opportunity scoring | **superseded** - the scoring model was rebuilt; see `opportunity_engine.py` |
 | `NEXGRAM_INTELLIGENCE_DATA_AUDIT.md` | the mock-to-real audit | **historical** - its recommendations were carried out |
+| `NEXGRAM_CONNECTIVITY_AUDIT.md` | both frontends against the live API | yes - the current state of the wiring |
+| `NEXGRAM_SHOP_FEATURES.md` | loans, sourcing, shelf inventory, voice sales and chotu delivery | yes - backend and the Vite app's screens |
+| `NEXGRAM_ASSISTANT.md` | the in-app Gemini chatbot, and how to switch it on | yes |
+| `NEXGRAM_CLERK_AUTH.md` | Clerk sign-in, and why it does not own the session | yes - optional, off without keys |

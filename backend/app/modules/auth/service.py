@@ -67,6 +67,11 @@ def create_user(db: Session, user_in: schemas.UserCreate) -> User:
     elif db_user.role == "distributor":
         profile = DistributorProfile(user_id=db_user.id, business_name=f"{db_user.name} Distribution")
         db.add(profile)
+    elif db_user.role == "customer":
+        # A household has no business to name; the address is collected when
+        # they first order, not at signup.
+        from app.models.retail import CustomerProfile
+        db.add(CustomerProfile(user_id=db_user.id))
     
     db.commit()
     db.refresh(db_user)
@@ -103,3 +108,82 @@ def get_me_response(db: Session, current_user: User) -> schemas.MeResponse:
         profile_id=profile_id,
         profile_complete=profile_complete
     )
+
+
+def _create_role_profile(db: Session, user: User) -> None:
+    """The profile row each role needs before its part of the app will load."""
+    if user.role == "retailer":
+        db.add(RetailerProfile(user_id=user.id, business_name=f"{user.name}'s Store"))
+    elif user.role == "distributor":
+        db.add(DistributorProfile(user_id=user.id, business_name=f"{user.name} Distribution"))
+    elif user.role == "customer":
+        from app.models.retail import CustomerProfile
+
+        db.add(CustomerProfile(user_id=user.id))
+
+
+def link_or_create_clerk_user(db: Session, identity, default_role: str = "retailer") -> tuple[User, bool]:
+    """Finds the NEXGram account behind a Clerk identity, creating one if new.
+
+    Returns the user and whether this call created them.
+
+    The matching order is the security-sensitive part. An identity is joined to
+    an existing account only on a contact detail Clerk has *verified* - the
+    caller is responsible for dropping unverified ones, which clerk.py does -
+    because matching an unverified number would let anyone who typed a
+    shopkeeper's mobile into a Clerk signup inherit that shop.
+
+    A shopkeeper who has been signing in with a password for months and then
+    signs in with Clerk on the same verified number is the same person, and
+    lands on the same shop. That is the whole point of matching at all.
+    """
+    existing = (
+        db.query(User).filter(User.clerk_user_id == identity.clerk_user_id).first()
+    )
+    if existing:
+        return existing, False
+
+    user = None
+    if identity.mobile:
+        user = db.query(User).filter(User.mobile == identity.mobile).first()
+    if not user and identity.email:
+        user = db.query(User).filter(User.email == identity.email).first()
+
+    if user:
+        if user.clerk_user_id and user.clerk_user_id != identity.clerk_user_id:
+            # Two Clerk identities claiming one shop. Refusing is the safe
+            # answer; silently repointing the account would be a takeover.
+            raise HTTPException(
+                status_code=409,
+                detail="Yeh account pehle se kisi aur Clerk login se juda hai.",
+            )
+        user.clerk_user_id = identity.clerk_user_id
+        if not user.email and identity.email:
+            user.email = identity.email
+        db.commit()
+        db.refresh(user)
+        return user, False
+
+    if not identity.mobile and not identity.email:
+        # Nothing verified came back, so there is no safe key to create against.
+        raise HTTPException(
+            status_code=400,
+            detail="Clerk se koi verified mobile ya email nahi mila. Apna number verify karein.",
+        )
+
+    user = User(
+        name=identity.name or (identity.mobile or identity.email or "NEXGram user"),
+        mobile=identity.mobile,
+        email=identity.email,
+        role=default_role,
+        # No local password. They sign in through Clerk; password_hash has
+        # always been nullable, so nothing in the schema had to change.
+        password_hash=None,
+        clerk_user_id=identity.clerk_user_id,
+    )
+    db.add(user)
+    db.flush()
+    _create_role_profile(db, user)
+    db.commit()
+    db.refresh(user)
+    return user, True

@@ -31,12 +31,30 @@ export async function fetchApi(endpoint, options = {}) {
       window.dispatchEvent(new Event('auth:unauthorized'));
     }
     const errorData = await response.json().catch(() => ({}));
-    const error = new Error(errorData.detail || 'API request failed');
+    // FastAPI returns 422 validation errors as a list of objects; rendering
+    // that list directly puts "[object Object]" in front of the user.
+    const error = new Error(describeDetail(errorData.detail) || 'API request failed');
     error.status = response.status;
     throw error;
   }
 
-  return response.json();
+  // 204 No Content has an empty body, and response.json() on an empty body
+  // rejects with a SyntaxError. Deleting a catalogue listing answers 204, so
+  // without this every successful delete surfaced as a failure.
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    return null;
+  }
+  return response.json().catch(() => null);
+}
+
+/** Turns whatever the server put in `detail` into one readable sentence. */
+function describeDetail(detail) {
+  if (!detail) return '';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((entry) => entry?.msg || entry?.detail || String(entry)).join('. ');
+  }
+  return detail.msg || '';
 }
 
 export function buildQueryString(params) {

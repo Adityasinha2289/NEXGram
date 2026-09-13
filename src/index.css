@@ -1,4 +1,14 @@
-@import "tailwindcss";
+/*
+ * `source("./")` scopes class detection to src/.
+ *
+ * Tailwind v4 otherwise auto-detects from the project root, which also contains
+ * the separate Next.js app in frontend/ - so this stylesheet was compiling that
+ * application's classes into the one this app ships, including a background
+ * image that does not exist here ("/noise.png didn't resolve at build time").
+ * The target user is on a metered connection; they should not pay for another
+ * app's CSS.
+ */
+@import "tailwindcss" source("./");
 
 /*
  * Design tokens.

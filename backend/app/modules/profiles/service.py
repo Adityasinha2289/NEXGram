@@ -47,6 +47,26 @@ def get_or_create_location(db: Session, location_data: schemas.LocationBase, exi
     db.refresh(loc)
     return loc.id
 
+def _merge_unmet_needs(current, submitted: dict) -> dict:
+    """Applies a profile edit without discarding what the shop has reported.
+
+    `unmet_needs` holds two different things: the categories and free text the
+    profile form edits, and the `reports` list that "Demand Batao" appends to
+    every time a customer asks for something the shop could not supply. The
+    profile form only ever submits the first pair, and assigning the payload
+    wholesale deleted the reports - every past demand signal from that shop,
+    gone on an unrelated save. Anything the edit does not mention is carried
+    over from the stored value.
+    """
+    merged = dict(current) if isinstance(current, dict) else {}
+    merged.update(submitted or {})
+    if "reports" not in (submitted or {}) and isinstance(current, dict):
+        reports = current.get("reports")
+        if reports:
+            merged["reports"] = reports
+    return merged
+
+
 def update_retailer_profile(db: Session, user: User, profile: RetailerProfile, update_data: schemas.RetailerProfileUpdate):
     if update_data.name: user.name = update_data.name
     if update_data.mobile: user.mobile = update_data.mobile
@@ -59,7 +79,8 @@ def update_retailer_profile(db: Session, user: User, profile: RetailerProfile, u
     if update_data.existing_supplier_type: profile.existing_supplier_type = update_data.existing_supplier_type
     
     if update_data.demanded_categories is not None: profile.demanded_categories = update_data.demanded_categories
-    if update_data.unmet_needs is not None: profile.unmet_needs = update_data.unmet_needs
+    if update_data.unmet_needs is not None:
+        profile.unmet_needs = _merge_unmet_needs(profile.unmet_needs, update_data.unmet_needs)
     if update_data.requirements is not None: profile.requirements = update_data.requirements
     
     if update_data.location:

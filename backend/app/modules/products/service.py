@@ -42,9 +42,14 @@ def get_product_with_suppliers(db: Session, product_id: str):
     
     offers = []
     for item in items:
-        # Extract location info safely
+        # Extract location info safely. The column is `area` (the market a
+        # supplier trades in); `village_town_city` is the fallback for rows
+        # geocoded to a settlement rather than a market.
         loc = item.distributor.location
-        loc_str = f"{loc.village_name}, {loc.block}" if loc else None
+        loc_str = None
+        if loc:
+            parts = [loc.area or loc.village_town_city, loc.block or loc.district]
+            loc_str = ", ".join(p for p in parts if p) or None
         
         offers.append({
             "id": item.id,

@@ -1,0 +1,71 @@
+# Render Blueprint for the NEXGram API.
+#
+# Postgres, not SQLite. Render's web service filesystem is ephemeral — it is
+# rebuilt on every deploy, every restart and every time the instance is moved,
+# so a SQLite file living next to the code is erased without warning and takes
+# every order, shop and inventory count with it. On the free tier the instance
+# also sleeps when idle and wakes with a fresh disk, which means a demo can lose
+# its data between two visits to the same page.
+#
+# Deploy with: Render Dashboard → New → Blueprint → point at this repo.
+# Values marked `sync: false` are typed into the dashboard, not committed here.
+
+databases:
+  - name: nexgram-db
+    databaseName: nexgram
+    user: nexgram
+    plan: free # 1GB, expires after 30 days on free — upgrade before a real launch
+
+services:
+  - type: web
+    name: nexgram-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    # The Dockerfile already runs `alembic upgrade head` before uvicorn, so a
+    # deploy migrates itself. It also binds ${PORT}, which Render sets.
+    healthCheckPath: /ready
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+
+      # Render's own connection string. postgresql:// resolves to psycopg2,
+      # which requirements.txt now installs — without it SQLAlchemy raises
+      # ModuleNotFoundError on the first connection.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nexgram-db
+          property: connectionString
+
+      # Generated once by Render and kept across deploys. Changing either one
+      # signs every user out, so do not regenerate casually.
+      - key: SECRET_KEY
+        generateValue: true
+      - key: OPS_TOKEN
+        generateValue: true
+
+      # The browser origins allowed to call this API — your deployed frontend,
+      # with no trailing slash. Startup FAILS in production if this still
+      # contains localhost, which is deliberate: a permissive CORS list shipped
+      # by accident is worse than a deploy that refuses to start.
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+      # --- Optional. Each feature reports itself unconfigured and hides,
+      # rather than erroring, when its keys are absent. ---
+
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      # Set this to your frontend origin. Blank skips the `azp` check, which
+      # would let a token minted for any other site on the same Clerk instance
+      # be accepted here.
+      - key: CLERK_AUTHORIZED_PARTIES
+        sync: false

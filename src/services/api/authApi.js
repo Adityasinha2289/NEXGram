@@ -44,4 +44,23 @@ export const authApi = {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
+
+  /** Whether the server has a Clerk instance configured to sign in against. */
+  clerkStatus: () => fetchApi('/auth/clerk/status'),
+
+  /**
+   * Trades a Clerk session token for a NEXGram one.
+   *
+   * Called once, at sign-in. What comes back is the same bearer token /login
+   * issues and lasts a week — Clerk's own token expires in sixty seconds and
+   * its web SDK cannot refresh one offline, which would sign a shopkeeper out
+   * every time the signal dropped behind the counter.
+   *
+   * `role` is only consulted if this Clerk identity has never been seen here.
+   * An existing account keeps the role the server already has for it.
+   */
+  exchangeClerkToken: (token, role) => fetchApi('/auth/clerk', {
+    method: 'POST',
+    body: JSON.stringify(role ? { token, role } : { token }),
+  }),
 };

@@ -83,7 +83,7 @@ export default function LoginPage() {
       <div className="hidden md:flex flex-1 relative items-end justify-start p-16 overflow-hidden">
         {/* Soft abstract gradient mimicking the color palette image */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-background to-secondary opacity-20" />
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay" />
+        <div className="absolute inset-0 opacity-20 mix-blend-overlay" />
 
         <div className="relative z-10 max-w-xl text-left">
           <div className="flex items-center gap-2 mb-8">

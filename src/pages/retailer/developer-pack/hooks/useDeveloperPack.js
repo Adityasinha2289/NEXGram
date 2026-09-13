@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { intelligenceApi } from '../../../../services/api/intelligenceApi';
+import { useApiResource } from '../../../../hooks/useApiResource';
 
 /**
  * The retailer's budget-aware stock plan.
@@ -10,48 +11,26 @@ import { intelligenceApi } from '../../../../services/api/intelligenceApi';
  *
  * Local edits (removing a line, adding one back) stay in component state: the
  * plan is a suggestion the shopkeeper adjusts before ordering, not a record.
+ *
+ * The fetch used to be written twice - a useCallback for "regenerate" and a
+ * separate inlined copy for the first load - and the inlined one neither reset
+ * the error nor cleared those local edits, so a regenerate after a failure left
+ * a stale error sitting above a fresh plan. Loading it through useApiResource,
+ * as every other screen does, makes that one path.
  */
 export function useDeveloperPack() {
-  const [pack, setPack] = useState(null);
   const [removedIds, setRemovedIds] = useState([]);
   const [extraItems, setExtraItems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await intelligenceApi.getDeveloperPack();
-      setPack(res);
-      setRemovedIds([]);
-      setExtraItems([]);
-    } catch (err) {
-      setError(err.message || 'Pack load nahi hua');
-    } finally {
-      setIsLoading(false);
-    }
+  const fetcher = useCallback(() => intelligenceApi.getDeveloperPack(), []);
+
+  // A new plan supersedes the edits made against the previous one.
+  const onSuccess = useCallback(() => {
+    setRemovedIds([]);
+    setExtraItems([]);
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    intelligenceApi.getDeveloperPack()
-      .then((res) => {
-        if (!cancelled) {
-          setPack(res);
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err.message || 'Pack load nahi hua');
-          setIsLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: pack, isLoading, error, reload } = useApiResource(fetcher, { onSuccess });
 
   const packItems = useMemo(() => {
     const suggested = (pack?.items || []).filter((item) => !removedIds.includes(item.id));
@@ -97,6 +76,6 @@ export function useDeveloperPack() {
     error,
     removeProduct,
     addProduct,
-    regeneratePack: load,
+    regeneratePack: reload,
   };
 }

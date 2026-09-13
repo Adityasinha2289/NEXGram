@@ -17,6 +17,9 @@ from typing import Dict, List
 SCHEMES: List[Dict] = [
     {
         "id": "pmmy_shishu",
+        "minAmount": 5000,
+        "maxAmount": 50000,
+        "isLoan": True,
         "name": "PM MUDRA Yojana (Shishu)",
         "authority": "Govt. of India / MUDRA",
         "summary": "Collateral-free working capital loan up to Rs 50,000 for micro enterprises.",
@@ -32,6 +35,9 @@ SCHEMES: List[Dict] = [
     },
     {
         "id": "pmmy_kishor",
+        "minAmount": 50000,
+        "maxAmount": 500000,
+        "isLoan": True,
         "name": "PM MUDRA Yojana (Kishor)",
         "authority": "Govt. of India / MUDRA",
         "summary": "Loan from Rs 50,000 to Rs 5 lakh for an established small business looking to expand.",
@@ -48,6 +54,9 @@ SCHEMES: List[Dict] = [
     },
     {
         "id": "udyam",
+        "minAmount": None,
+        "maxAmount": None,
+        "isLoan": False,
         "name": "Udyam Registration (MSME)",
         "authority": "Ministry of MSME",
         "summary": "Free online registration that unlocks priority-sector lending, subsidies and tender access.",
@@ -63,6 +72,9 @@ SCHEMES: List[Dict] = [
     },
     {
         "id": "pmfme",
+        "minAmount": 50000,
+        "maxAmount": 1000000,
+        "isLoan": True,
         "name": "PM Formalisation of Micro Food Processing (PMFME)",
         "authority": "Ministry of Food Processing Industries",
         "summary": "35% credit-linked subsidy for micro food-processing units, capped at Rs 10 lakh.",
@@ -78,6 +90,9 @@ SCHEMES: List[Dict] = [
     },
     {
         "id": "standup_india",
+        "minAmount": 1000000,
+        "maxAmount": 10000000,
+        "isLoan": True,
         "name": "Stand-Up India",
         "authority": "Govt. of India / SIDBI",
         "summary": "Bank loans from Rs 10 lakh to Rs 1 crore for SC/ST and women entrepreneurs setting up a new enterprise.",
@@ -148,7 +163,32 @@ def evaluate_criteria(profile_data: Dict, role: str) -> Dict[str, tuple]:
     }
 
 
-def match_schemes(profile_data: Dict, role: str) -> List[Dict]:
+def amount_fit(scheme: Dict, amount: float) -> Dict:
+    """Whether a scheme covers the amount someone actually wants.
+
+    The question a tier-3 shopkeeper asks is "who lends me thirty thousand
+    rupees", and answering it with a Rs 10 lakh facility wastes a trip to a
+    bank. A scheme that does not cover the amount is still returned - so the
+    list does not silently shrink - but it is marked, ranked below the ones
+    that do, and says why.
+    """
+    low, high = scheme.get("minAmount"), scheme.get("maxAmount")
+    if not scheme.get("isLoan", True):
+        return {"covers": False, "note": "Yeh loan nahi, registration hai."}
+    if low and amount < low:
+        return {
+            "covers": False,
+            "note": f"Yeh scheme Rs {low:,.0f} se shuru hoti hai.",
+        }
+    if high and amount > high:
+        return {
+            "covers": False,
+            "note": f"Is scheme mein zyada se zyada Rs {high:,.0f} milta hai.",
+        }
+    return {"covers": True, "note": None}
+
+
+def match_schemes(profile_data: Dict, role: str, amount: float = None) -> List[Dict]:
     """Scores every scheme against one profile.
 
     Returns each scheme with its criteria marked met / not met / self-declared,
@@ -184,7 +224,7 @@ def match_schemes(profile_data: Dict, role: str) -> List[Dict]:
         else:
             verdict, variant = "Criteria poore lagte hain", "success"
 
-        results.append({
+        entry = {
             **{k: v for k, v in scheme.items() if k != "criteria"},
             "checks": checks,
             "metCount": met,
@@ -193,7 +233,20 @@ def match_schemes(profile_data: Dict, role: str) -> List[Dict]:
             "verdictVariant": variant,
             # Never phrased as approval; this is what the portal will ask about.
             "disclaimer": "Final eligibility official portal decide karta hai. Yeh sirf aapke profile ke against criteria match hai.",
-        })
+        }
 
-    results.sort(key=lambda r: (-r["metCount"] / r["totalCount"], r["name"]))
+        if amount is not None:
+            fit = amount_fit(scheme, amount)
+            entry["coversAmount"] = fit["covers"]
+            entry["amountNote"] = fit["note"]
+
+        results.append(entry)
+
+    # Schemes that can actually lend the requested amount lead, then how much
+    # of their criteria the profile already meets.
+    results.sort(key=lambda r: (
+        not r.get("coversAmount", True),
+        -r["metCount"] / r["totalCount"],
+        r["name"],
+    ))
     return results

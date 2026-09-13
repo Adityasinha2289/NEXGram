@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Package, Check, X } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { distributorMoves, statusFor } from "@/lib/orderStatus";
 
 export default function DistributorOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,10 +21,15 @@ export default function DistributorOrderDetailPage() {
   const updateStatusMutation = useMutation({
     mutationFn: (status: string) => ordersApi.updateOrderStatus(id, { status }),
     onSuccess: (data) => {
-      toast.success(`Order marked as ${data.status}`);
+      toast.success(`Order ${statusFor(data.status).label.toLowerCase()}`);
       queryClient.invalidateQueries({ queryKey: ['distributor-order', id] });
       queryClient.invalidateQueries({ queryKey: ['distributor-orders'] });
-    }
+    },
+    // The server refuses an illegal transition and an out-of-stock accept with
+    // a reason; swallowing it left the button looking simply broken.
+    onError: (err: Error) => {
+      toast.error("Could not update the order", { description: err.message });
+    },
   });
 
   if (isLoading) {
@@ -45,8 +51,15 @@ export default function DistributorOrderDetailPage() {
     );
   }
 
-  const isPending = order.status === "pending";
-  const isAccepted = order.status === "processing";
+  /*
+   * What this distributor can do next, taken from the server's own transition
+   * table. The page previously tested for "pending" and "processing", which the
+   * API has never used, so the whole fulfilment panel was unreachable - and the
+   * buttons inside it would have sent "processing" and "delivered", which the
+   * server rejects outright.
+   */
+  const moves = distributorMoves(order.status);
+  const presentation = statusFor(order.status);
 
   return (
     <div className="space-y-8 pb-12 max-w-4xl mx-auto">
@@ -61,12 +74,8 @@ export default function DistributorOrderDetailPage() {
               From <span className="font-medium text-foreground">{order.retailer_name}</span> • Placed {new Date(order.created_at).toLocaleString()}
             </p>
           </div>
-          <span className={`px-3 py-1.5 rounded-lg text-sm font-medium uppercase tracking-widest ${
-            order.status === 'delivered' ? 'bg-green-500/10 text-green-500' :
-            order.status === 'cancelled' || order.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
-            'bg-orange-500/10 text-orange-500'
-          }`}>
-            {order.status}
+          <span className={`px-3 py-1.5 rounded-lg text-sm font-medium uppercase tracking-widest ${presentation.className}`}>
+            {presentation.label}
           </span>
         </div>
       </header>
@@ -110,45 +119,30 @@ export default function DistributorOrderDetailPage() {
 
         <div className="space-y-6">
           {/* Actions */}
-          {(isPending || isAccepted) && (
+          {moves.length > 0 && (
             <div className="bg-card border border-border/40 rounded-xl p-6 space-y-3">
-              <h3 className="font-medium mb-4">Manage Fulfillment</h3>
-              
-              {isPending && (
-                <>
-                  <button 
-                    onClick={() => updateStatusMutation.mutate("processing")}
+              <h3 className="font-medium mb-4">Manage fulfillment</h3>
+              {moves.map((move) => {
+                const busy =
+                  updateStatusMutation.isPending && updateStatusMutation.variables === move.to;
+                const tone =
+                  move.tone === "danger"
+                    ? "border border-red-500/20 text-red-600 hover:bg-red-500/10"
+                    : move.tone === "success"
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90";
+                return (
+                  <button
+                    key={move.to}
+                    onClick={() => updateStatusMutation.mutate(move.to)}
                     disabled={updateStatusMutation.isPending}
-                    className="w-full bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex justify-center items-center gap-2"
+                    className={`w-full py-3 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2 disabled:opacity-60 ${tone}`}
                   >
-                    {updateStatusMutation.isPending && updateStatusMutation.variables === "processing" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    Accept & Process
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : move.tone === "danger" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                    {move.label}
                   </button>
-                  <button 
-                    onClick={() => {
-                      if(confirm("Are you sure you want to reject this order?")) {
-                        updateStatusMutation.mutate("rejected");
-                      }
-                    }}
-                    disabled={updateStatusMutation.isPending}
-                    className="w-full border border-red-500/20 text-red-500 hover:bg-red-500/10 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    {updateStatusMutation.isPending && updateStatusMutation.variables === "rejected" ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                    Reject Order
-                  </button>
-                </>
-              )}
-
-              {isAccepted && (
-                <button 
-                  onClick={() => updateStatusMutation.mutate("delivered")}
-                  disabled={updateStatusMutation.isPending}
-                  className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex justify-center items-center gap-2"
-                >
-                  {updateStatusMutation.isPending && updateStatusMutation.variables === "delivered" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                  Mark as Delivered
-                </button>
-              )}
+                );
+              })}
             </div>
           )}
 

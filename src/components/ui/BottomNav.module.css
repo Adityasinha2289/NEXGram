@@ -38,9 +38,9 @@
   }
 
   /*
-   * After .group, not with the other hidden elements: the secondary group
-   * carries both classes, and at equal specificity the later rule wins. Listed
-   * first, it put all eight destinations on a phone's four-slot bar.
+   * Sidebar-only, like the brand row and the labels. Each secondary group is
+   * now a wrapper around its own heading and list, so hiding the wrapper takes
+   * the heading with it - a phone's four-slot bar shows the primary row alone.
    */
   .secondaryGroup {
     display: none;
@@ -156,14 +156,20 @@
       margin: 0 0 var(--spacing-xs);
     }
 
-    .group,
-    .secondaryGroup {
+    .group {
       display: flex;
       flex: 0 0 auto;
       flex-direction: column;
       align-items: stretch;
       gap: 2px;
       margin-bottom: var(--spacing-lg);
+    }
+
+    /* The wrapper only groups a heading with its list; the list inside still
+       does the stacking, so it needs no layout of its own. */
+    .secondaryGroup {
+      display: block;
+      flex: 0 0 auto;
     }
 
     .navItem {

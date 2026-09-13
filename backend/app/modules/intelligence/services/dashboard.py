@@ -34,6 +34,26 @@ TIERS = [
 ]
 
 
+def naive(value: Optional[datetime]) -> Optional[datetime]:
+    """Drops the offset so a value can be compared with `now_naive()`.
+
+    SQLite hands back naive datetimes and Postgres hands back aware ones, so
+    every comparison in this module has to normalise first or it raises
+    "can't subtract offset-naive and offset-aware datetimes" on one backend and
+    not the other.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    return value.replace(tzinfo=None) if value.tzinfo else value
+
+
+def now_naive() -> datetime:
+    """Current UTC time, offset stripped, to compare against stored timestamps."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def tier_for(score: float):
     for threshold, label, variant, blurb in TIERS:
         if score >= threshold:
@@ -442,7 +462,7 @@ def build_reorder_list(db: Session, retailer: RetailerProfile) -> list:
     for row in rows:
         history.setdefault(row.product_id, []).append(row)
 
-    now = datetime.now(timezone.utc)
+    now = now_naive()
     items = []
     for product_id, entries in history.items():
         product = db.query(Product).filter(Product.id == product_id).first()
@@ -453,11 +473,9 @@ def build_reorder_list(db: Session, retailer: RetailerProfile) -> list:
         # purchase occasion, so dedupe by date before measuring cadence.
         dates = set()
         for entry in entries:
-            created = entry.created_at
-            if isinstance(created, str):
-                created = datetime.fromisoformat(created)
+            created = naive(entry.created_at)
             if created:
-                dates.add(created.replace(tzinfo=None).date())
+                dates.add(created.date())
         if not dates:
             continue
 
@@ -689,13 +707,11 @@ def build_retailer_dashboard(db: Session, retailer: RetailerProfile) -> dict:
         .group_by(Product.id, Product.canonical_name) \
         .order_by(func.max(Order.created_at).desc()).limit(4).all()
 
-    now = datetime.now(timezone.utc)
+    now = now_naive()
     reorder_items = []
     for row in recent_rows:
-        last = row.last_ordered
-        if isinstance(last, str):
-            last = datetime.fromisoformat(last)
-        days = (now - last.replace(tzinfo=None)).days if last else None
+        last = naive(row.last_ordered)
+        days = (now - last).days if last else None
         reorder_items.append({
             "id": row.id,
             "name": row.canonical_name,

@@ -1,18 +1,34 @@
-import { ArrowLeft, RefreshCw, Store, Truck, User } from 'lucide-react';
+import { ArrowLeft, LogOut, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import styles from './TopNav.module.css';
 import { AlertsBell } from './AlertsBell';
 import { useAuth } from '../../context/useAuth';
 
+/**
+ * The header.
+ *
+ * There used to be a role switcher here that signed you into a different demo
+ * account in place. It was the wrong shape for the product — a shopkeeper does
+ * not become a distributor — so a control that swapped identity mid-screen read
+ * as a fault every time it was used. Leaving is now an explicit exit to the
+ * home page, which is where the three demos live; you pick the next one there.
+ */
 export function TopNav({ title = 'NEXGram', showBack = false }) {
   const navigate = useNavigate();
-  const { currentUser, switchRole, isExplorationMode } = useAuth();
+  const { currentUser, logout } = useAuth();
 
-  const handleRoleToggle = async () => {
-    const nextRole = currentUser?.role === 'retailer' ? 'distributor' : 'retailer';
-    await switchRole(nextRole);
-    navigate(`/${nextRole}/dashboard`);
+  const exitToHome = () => {
+    // The landing page sends a signed-in user straight back to their own
+    // dashboard, so leaving has to actually end the session - otherwise the
+    // click bounces off and appears to do nothing.
+    logout();
+    navigate('/', { replace: true });
   };
+
+  // A household has no business profile; their address lives in the storefront.
+  const profilePath = currentUser?.role === 'customer'
+    ? '/shop/address'
+    : `/${currentUser?.role}/profile`;
 
   return (
     <header className={styles.topnav}>
@@ -29,35 +45,25 @@ export function TopNav({ title = 'NEXGram', showBack = false }) {
 
         {currentUser && (
           <div className={styles.actions}>
-            {isExplorationMode && (
-              <button
-                type="button"
-                onClick={handleRoleToggle}
-                className="hidden items-center gap-1.5 rounded-full border border-border bg-surface-muted px-2.5 py-1 text-2xs font-semibold text-text-secondary transition-colors hover:border-primary hover:bg-primary-light hover:text-primary sm:flex"
-                title={`Switch to ${currentUser.role === 'retailer' ? 'Distributor' : 'Retailer'} mode`}
-              >
-                {currentUser.role === 'retailer' ? (
-                  <>
-                    <Store size={12} className="text-primary" />
-                    <span>Retailer</span>
-                    <RefreshCw size={10} className="text-text-muted" />
-                  </>
-                ) : (
-                  <>
-                    <Truck size={12} className="text-primary" />
-                    <span>Distributor</span>
-                    <RefreshCw size={10} className="text-text-muted" />
-                  </>
-                )}
-              </button>
-            )}
-            <AlertsBell />
+            {/* Alerts are derived from opportunities and orders, which a
+                household has neither of — the endpoint refuses them. */}
+            {currentUser.role !== 'customer' && <AlertsBell />}
+
             <button
               className={styles.iconBtn}
-              onClick={() => navigate(`/${currentUser.role}/profile`)}
+              onClick={() => navigate(profilePath)}
               aria-label="Mera profile"
             >
               <User size={20} />
+            </button>
+
+            <button
+              className={styles.iconBtn}
+              onClick={exitToHome}
+              aria-label="Bahar niklein"
+              title="Home page par wapas — wahaan se doosra demo khol sakte hain"
+            >
+              <LogOut size={19} />
             </button>
           </div>
         )}

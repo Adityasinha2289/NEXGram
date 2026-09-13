@@ -19,4 +19,10 @@ export const DEMO_ACCOUNTS = {
     label: 'Himachal Dairy Co',
     caption: 'Palampur ka dairy distributor',
   },
+  customer: {
+    mobile: '9500000001',
+    password: 'demo1234',
+    label: 'Sunita Devi',
+    caption: 'Gupta Kirana se 400m door',
+  },
 };

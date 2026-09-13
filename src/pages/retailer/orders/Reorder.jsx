@@ -73,7 +73,11 @@ export function Reorder() {
                       </h3>
                       {item.dueNow && <Badge variant="warning" dot>Ab due hai</Badge>}
                     </div>
-                    <p className="mt-0.5 truncate text-2xs text-text-muted">{item.distributorName}</p>
+                    <p className="mt-0.5 truncate text-2xs text-text-muted">
+                      {item.available
+                        ? item.distributorName
+                        : 'Abhi koi local supplier stock nahi karta'}
+                    </p>
                     <p className="mt-1 flex items-center gap-1 text-2xs text-text-muted">
                       <Clock size={11} /> {item.suggestion}
                     </p>
@@ -82,27 +86,33 @@ export function Reorder() {
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
                     <span className="text-right">
                       <span className="num block text-sm font-semibold text-text-primary">
-                        {rupees(item.price)}
+                        {rupees(item.price ?? item.lastPaidPrice ?? 0)}
                       </span>
                       <span className="block text-2xs text-text-muted">
                         / {item.variant || item.unit}
                       </span>
                     </span>
                     
+                    {/*
+                      * `available` is the server's answer to "can this still be
+                      * bought today": it is false when no live listing backs the
+                      * row, and then `id` is a product id rather than a
+                      * catalogue item id, which the order endpoint rejects. The
+                      * button used to test `availableStock`, a field this
+                      * endpoint does not return, so it was never disabled.
+                      */}
                     <button
                       type="button"
-                      disabled={item.availableStock < item.minimumOrderQuantity}
+                      disabled={!item.available}
+                      title={item.available ? undefined : 'Abhi koi local supplier stock nahi karta'}
                       onClick={() => {
                         const productForBasket = {
                           id: item.id,
                           name: item.name,
                           variant: item.variant || item.unit,
-                          category: 'Uncategorised',
+                          category: item.category || 'Uncategorised',
                           price: item.price,
                           minimumOrderQuantity: item.minimumOrderQuantity || 1,
-                          availableStock: item.availableStock || 999,
-                          stockStatus: item.stockStatus || 'available',
-                          deliveryTime: item.deliveryTime
                         };
                         addItem(productForBasket, item.distributorId, item.distributorName);
                       }}

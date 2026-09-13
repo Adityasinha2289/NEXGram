@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
@@ -29,6 +31,10 @@ def _profile_data(db: Session, user: User) -> dict:
 
 @router.get("", summary="Schemes matched against the signed-in user's profile")
 def list_schemes(
+    amount: Optional[float] = Query(
+        default=None, gt=0,
+        description="How much the user wants to borrow. Schemes that cover it rank first.",
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -41,6 +47,7 @@ def list_schemes(
     """
     return {
         "role": current_user.role,
-        "schemes": match_schemes(_profile_data(db, current_user), current_user.role),
+        "schemes": match_schemes(_profile_data(db, current_user), current_user.role, amount),
         "totalCatalogued": len(SCHEMES),
+        "requestedAmount": amount,
     }

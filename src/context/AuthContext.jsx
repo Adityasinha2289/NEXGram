@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authApi } from '../services/api/authApi';
 import { profilesApi } from '../services/api/profilesApi';
-import { DEMO_ACCOUNTS } from '../constants/demoAccounts';
-import { IS_EXPLORATION_MODE } from '../constants/config';
+import { storefrontApi } from '../services/api/storefrontApi';
 import { AuthContext } from './AuthContextCore';
 
 const SESSION_CACHE_KEY = 'nexgram_session_cache';
@@ -62,6 +61,10 @@ export function AuthProvider({ children }) {
           profData = await profilesApi.getRetailerProfile();
         } else if (user.role === 'distributor') {
           profData = await profilesApi.getDistributorProfile();
+        } else if (user.role === 'customer') {
+          // A household has no business profile; the delivery address is the
+          // only thing the app needs to know about them.
+          profData = await storefrontApi.getMe();
         }
         setProfile(profData);
       } catch (err) {
@@ -70,6 +73,7 @@ export function AuthProvider({ children }) {
       }
 
       writeSessionCache(user, profData);
+      return user;
     } catch (err) {
       // Only a rejected token ends the session. A network failure must not:
       // signing a shopkeeper out because their signal dropped would lose their
@@ -86,7 +90,9 @@ export function AuthProvider({ children }) {
           setProfile(cached.profile ?? null);
         }
         console.warn('Session could not be verified; using the last known one.', err);
+        return readSessionCache()?.user ?? null;
       }
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -106,6 +112,8 @@ export function AuthProvider({ children }) {
               profData = await profilesApi.getRetailerProfile();
             } else if (user.role === 'distributor') {
               profData = await profilesApi.getDistributorProfile();
+            } else if (user.role === 'customer') {
+              profData = await storefrontApi.getMe();
             }
             if (!cancelled) setProfile(profData);
           } catch {
@@ -147,12 +155,35 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  /**
+   * Signs in and returns the user the server actually recognised.
+   *
+   * The caller needs that to route: the login screen only *guesses* a role
+   * from its own path, and distributor credentials typed on the retailer page
+   * must still land on the distributor's dashboard rather than a screen that
+   * user has no profile for.
+   */
   const login = async (mobile, password) => {
     const res = await authApi.login(mobile, password);
-    if (res.access_token) {
-      localStorage.setItem('nexgram_access_token', res.access_token);
-      await fetchCurrentUser();
-    }
+    if (!res.access_token) return null;
+    localStorage.setItem('nexgram_access_token', res.access_token);
+    return fetchCurrentUser();
+  };
+
+  /**
+   * Signs in with an identity Clerk has already proved, and returns the user
+   * the server recognised.
+   *
+   * Clerk's token is spent here and never stored. From this line on the session
+   * is an ordinary NEXGram one — same token, same expiry, same offline
+   * behaviour as a mobile+password sign-in, which is the whole reason the app
+   * did not have to change around it.
+   */
+  const loginWithClerk = async (clerkToken, role) => {
+    const res = await authApi.exchangeClerkToken(clerkToken, role);
+    if (!res.access_token) return null;
+    localStorage.setItem('nexgram_access_token', res.access_token);
+    return fetchCurrentUser();
   };
 
   const register = async (userData) => {
@@ -168,21 +199,6 @@ export function AuthProvider({ children }) {
     setProfile(null);
   };
 
-  /**
-   * Exploration Mode: Switch session to a seeded development account
-   * for either retailer or distributor seamlessly with a real backend JWT.
-   */
-  const switchRole = async (targetRole) => {
-    const account = DEMO_ACCOUNTS[targetRole];
-    if (!account) return;
-    setIsLoading(true);
-    try {
-      await login(account.mobile, account.password);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <AuthContext.Provider value={{
       currentUser,
@@ -191,10 +207,9 @@ export function AuthProvider({ children }) {
       isLoading,
       isAuthenticated: !!currentUser,
       login,
+      loginWithClerk,
       register,
       logout,
-      switchRole,
-      isExplorationMode: IS_EXPLORATION_MODE,
     }}>
       {children}
     </AuthContext.Provider>

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ordersApi } from "@/lib/api/orders";
 import { Loader2, Package, Search } from "lucide-react";
 import Link from "next/link";
+import { statusFor } from "@/lib/orderStatus";
 
 export default function RetailerOrdersPage() {
   const { data, isLoading, error } = useQuery({
@@ -66,12 +67,12 @@ export default function RetailerOrdersPage() {
                       {order.distributor_name}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-md text-xs font-medium uppercase tracking-widest ${
-                        order.status === 'delivered' ? 'bg-green-500/10 text-green-500' :
-                        order.status === 'cancelled' || order.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
-                        'bg-orange-500/10 text-orange-500'
-                      }`}>
-                        {order.status}
+                      {/* One vocabulary for every screen. This branched on
+                          'delivered', which the API never sends, so a finished
+                          order stayed amber and the raw value was printed at
+                          the user. */}
+                      <span className={`px-2 py-1 rounded-md text-xs font-medium uppercase tracking-widest ${statusFor(order.status).className}`}>
+                        {statusFor(order.status).label}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right font-medium">

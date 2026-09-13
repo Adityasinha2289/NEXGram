@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Package, XCircle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { retailerCanCancel, statusFor } from "@/lib/orderStatus";
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,7 +24,12 @@ export default function OrderDetailPage() {
       toast.success("Order cancelled");
       queryClient.invalidateQueries({ queryKey: ['order', id] });
       queryClient.invalidateQueries({ queryKey: ['retailer-orders'] });
-    }
+    },
+    // The server explains a refusal (already shipped, already cancelled);
+    // swallowing it left the button looking simply broken.
+    onError: (err: Error) => {
+      toast.error("Could not cancel the order", { description: err.message });
+    },
   });
 
   if (isLoading) {
@@ -45,7 +51,13 @@ export default function OrderDetailPage() {
     );
   }
 
-  const isCancellable = order.status === "pending" || order.status === "processing";
+  /*
+   * The API accepts a retailer cancellation from requested, accepted and
+   * preparing. This tested for "pending" and "processing", which it has never
+   * used, so the cancel button never appeared on any order.
+   */
+  const isCancellable = retailerCanCancel(order.status);
+  const presentation = statusFor(order.status);
 
   return (
     <div className="space-y-8 pb-12 max-w-4xl mx-auto">
@@ -60,12 +72,8 @@ export default function OrderDetailPage() {
               Placed on {new Date(order.created_at).toLocaleString()}
             </p>
           </div>
-          <span className={`px-3 py-1.5 rounded-lg text-sm font-medium uppercase tracking-widest ${
-            order.status === 'delivered' ? 'bg-green-500/10 text-green-500' :
-            order.status === 'cancelled' || order.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
-            'bg-orange-500/10 text-orange-500'
-          }`}>
-            {order.status}
+          <span className={`px-3 py-1.5 rounded-lg text-sm font-medium uppercase tracking-widest ${presentation.className}`}>
+            {presentation.label}
           </span>
         </div>
       </header>
@@ -83,9 +91,10 @@ export default function OrderDetailPage() {
                     <Package className="h-6 w-6 text-muted-foreground/30" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Link href={`/retailer/marketplace/${item.catalogue_item_id}`} className="font-medium text-foreground truncate hover:text-primary transition-colors block">
-                      {item.product_name}
-                    </Link>
+                    {/* Not linked: an order item carries the catalogue item id,
+                        and this route resolves a product id, so the link led to
+                        a 404 on every row. */}
+                    <p className="font-medium text-foreground truncate">{item.product_name}</p>
                     <p className="text-sm text-muted-foreground">{item.variant_name}</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {item.quantity} x ₹{item.unit_price.toLocaleString()}

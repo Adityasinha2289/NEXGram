@@ -28,7 +28,7 @@ services:
       # Compose-local values. A real deployment supplies its own.
       SECRET_KEY: ${SECRET_KEY:-compose-local-secret-change-me}
       OPS_TOKEN: ${OPS_TOKEN:-compose-local-ops-token}
-      ALLOWED_ORIGINS: http://localhost:4173,http://localhost:5173
+      ALLOWED_ORIGINS: http://localhost:4173,http://localhost:5173,http://localhost:3000
     ports:
       - "8000:8000"
 

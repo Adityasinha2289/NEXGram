@@ -101,7 +101,7 @@ export function ProductDetail() {
                         {offer.stock > 0 ? (
                           <span className="text-success">Stock: {offer.stock}</span>
                         ) : (
-                          <span className="text-error">Out of stock</span>
+                          <span className="text-danger">Out of stock</span>
                         )}
                         {offer.distributor_location && (
                           <span className="flex items-center gap-1">

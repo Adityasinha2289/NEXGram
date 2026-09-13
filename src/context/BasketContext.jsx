@@ -30,7 +30,10 @@ export function BasketProvider({ children }) {
       if (!currentItems[product.id]) {
         currentItems[product.id] = {
           product,
-          quantity: Math.min(product.minimumOrderQuantity, product.availableStock),
+          // The MOQ is a floor the server enforces, so it is never rounded down
+          // to match stock: Math.min() here produced lines the API rejected with
+          // "below MOQ", and NaN whenever a caller had no stock figure to pass.
+          quantity: Math.max(1, Number(product.minimumOrderQuantity) || 1),
         };
       }
       
@@ -98,6 +101,16 @@ export function BasketProvider({ children }) {
     }
   }, []);
 
+  /**
+   * How many of one product are already in this supplier's basket.
+   *
+   * Reads (distributorId, productId) in that order: the basket is keyed by
+   * supplier first because an order is per-supplier on the server.
+   */
+  const getQuantity = useCallback((distributorId, productId) => (
+    basket[distributorId]?.items?.[productId]?.quantity || 0
+  ), [basket]);
+
   const getDistributorDraft = useCallback((distributorId) => {
     if (!basket[distributorId]) return {};
     const draft = {};
@@ -113,8 +126,9 @@ export function BasketProvider({ children }) {
     updateQuantity,
     removeItem,
     clearBasket,
+    getQuantity,
     getDistributorDraft,
-  }), [basket, addItem, updateQuantity, removeItem, clearBasket, getDistributorDraft]);
+  }), [basket, addItem, updateQuantity, removeItem, clearBasket, getQuantity, getDistributorDraft]);
 
   return (
     <BasketContext.Provider value={value}>

@@ -23,6 +23,17 @@ export function ProcurementReview() {
     return sum + items.reduce((itemSum, item) => itemSum + (item.quantity * item.product.price), 0);
   }, 0);
 
+  /*
+   * The server rejects the whole order if any line is under that listing's MOQ,
+   * so checkout is blocked here instead. The warning beside the line already
+   * said what was wrong; the button used to send it anyway and report the
+   * refusal as an unexplained failure.
+   */
+  const belowMoqCount = distributorIds.reduce((count, distId) => (
+    count + Object.values(basket[distId].items)
+      .filter((item) => item.quantity < (item.product.minimumOrderQuantity || 1)).length
+  ), 0);
+
   const placeOrders = async () => {
     setIsPlacing(true);
     setError(null);
@@ -145,7 +156,7 @@ export function ProcurementReview() {
                       
                       <div className="flex items-center justify-between mt-2">
                         {qty < p.minimumOrderQuantity && (
-                          <div className="flex items-center gap-1 text-xs text-error font-medium">
+                          <div className="flex items-center gap-1 text-xs text-danger font-medium">
                             <AlertCircle size={14} /> Min {p.minimumOrderQuantity} chahiye
                           </div>
                         )}
@@ -153,7 +164,7 @@ export function ProcurementReview() {
                           <button
                             type="button"
                             onClick={() => removeItem(p.id, distId)}
-                            className="text-xs font-medium text-error hover:text-error-hover"
+                            className="text-xs font-medium text-danger hover:text-danger/80"
                           >
                             Hatao
                           </button>
@@ -170,7 +181,7 @@ export function ProcurementReview() {
                             <span className="w-4 text-center text-sm font-semibold">{qty}</span>
                             <button
                               type="button"
-                              disabled={qty >= p.availableStock}
+                              disabled={Number.isFinite(p.availableStock) && qty >= p.availableStock}
                               onClick={() => updateQuantity(p.id, qty + 1, distId)}
                               className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-muted text-lg font-medium text-text-secondary disabled:opacity-30"
                             >
@@ -196,10 +207,18 @@ export function ProcurementReview() {
           </div>
           <p className="text-xl font-bold text-text-primary">{rupees(totalAmount)}</p>
         </div>
-        
+
+        {belowMoqCount > 0 && (
+          <p className="mb-2 flex items-start gap-1.5 text-xs leading-snug text-danger">
+            <AlertCircle size={14} className="mt-px flex-shrink-0" />
+            {belowMoqCount} item{belowMoqCount === 1 ? '' : 's'} MOQ se kam hain. Quantity badhayein
+            ya hatayein, tabhi order ja payega.
+          </p>
+        )}
+
         <button
           type="button"
-          disabled={isPlacing || totalAmount === 0}
+          disabled={isPlacing || totalAmount === 0 || belowMoqCount > 0}
           onClick={placeOrders}
           className="btn btn-primary w-full"
         >

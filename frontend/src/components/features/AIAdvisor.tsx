@@ -28,7 +28,7 @@ export const AIAdvisor = () => {
       </div>
 
       {/* Workspace Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-[url('/noise.png')] mix-blend-multiply dark:mix-blend-overlay">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 mix-blend-multiply dark:mix-blend-overlay">
         {/* Contextual Recommendation Block */}
         <div className="bg-background border border-primary/20 rounded-xl p-5 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-primary" />

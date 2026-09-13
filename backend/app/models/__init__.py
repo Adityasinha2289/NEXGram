@@ -4,6 +4,16 @@ from .profiles import RetailerProfile, DistributorProfile, Location
 from .catalogue import Category, Product, ProductVariant, DistributorCatalogueItem
 from .commerce import Order, OrderItem, OrderStatusHistory, RetailerDistributorRelationship, Inventory
 from .intelligence import DemandSignal, Opportunity, RecommendationEvidence
+from .retail import (
+    ConsumerOrder,
+    ConsumerOrderItem,
+    CustomerProfile,
+    DeliveryRunner,
+    InventoryBatch,
+    LoanApplication,
+    RetailerInventory,
+    StockMovement,
+)
 from .audit import AuditLog
 
 # Import Base so alembic can pick it up easily

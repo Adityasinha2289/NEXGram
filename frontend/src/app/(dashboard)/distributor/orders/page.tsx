@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ordersApi } from "@/lib/api/orders";
 import { Loader2, Package, Search, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { statusFor } from "@/lib/orderStatus";
 
 export default function DistributorOrdersPage() {
   const { data, isLoading, error } = useQuery({
@@ -47,12 +48,7 @@ export default function DistributorOrdersPage() {
               className="bg-card border border-border/40 rounded-xl p-5 hover:border-primary/50 transition-colors group flex items-center justify-between"
             >
               <div className="flex items-center gap-6">
-                <div className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${
-                  order.status === 'pending' ? 'bg-orange-500/10 text-orange-500' :
-                  order.status === 'delivered' ? 'bg-green-500/10 text-green-500' :
-                  order.status === 'cancelled' || order.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
-                  'bg-primary/10 text-primary'
-                }`}>
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${statusFor(order.status).className}`}>
                   <Package className="h-5 w-5" />
                 </div>
                 
@@ -74,12 +70,8 @@ export default function DistributorOrdersPage() {
               <div className="flex items-center gap-6 text-right">
                 <div>
                   <p className="font-medium">₹{order.total.toLocaleString()}</p>
-                  <p className={`text-xs font-medium uppercase tracking-widest mt-1 ${
-                    order.status === 'delivered' ? 'text-green-500' :
-                    order.status === 'cancelled' || order.status === 'rejected' ? 'text-red-500' :
-                    'text-orange-500'
-                  }`}>
-                    {order.status}
+                  <p className={`text-xs font-medium uppercase tracking-widest mt-1 px-2 py-0.5 rounded-md inline-block ${statusFor(order.status).className}`}>
+                    {statusFor(order.status).label}
                   </p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />

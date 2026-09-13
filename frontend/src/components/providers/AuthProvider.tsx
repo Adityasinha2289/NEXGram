@@ -31,8 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           profile_id: user.profile_id,
           profile_complete: user.profile_complete,
         });
-      } catch (error) {
-        // If getting the current user fails (e.g. 401), we clear the token.
+      } catch {
+        // A rejected token ends the session; the interceptor has already
+        // cleared it and redirected.
         logout();
       } finally {
         setHydrating(false);

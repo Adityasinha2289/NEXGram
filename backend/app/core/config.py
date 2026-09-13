@@ -40,6 +40,73 @@ class Settings(BaseSettings):
 
     LOG_LEVEL: str = "INFO"
 
+    # --- Assistant (Google Gemini) -----------------------------------------
+    #
+    # Left blank on purpose. Without a key the assistant reports itself as
+    # unconfigured and the UI hides itself, rather than every chat turning into
+    # a 500 nobody can act on.
+    GEMINI_API_KEY: str = ""
+
+    # Chosen for latency, measured rather than assumed: on this workload the
+    # -lite tier answers in ~1.1s to first token against ~4.7s for the plain
+    # flash of the same generation, and the answers stayed on topic. On a rural
+    # connection that gap is the difference between a reply and a wait.
+    #
+    # Google retires these. When it does, the API answers 404 with the name of
+    # the replacement, and _explain() puts that name in front of the user.
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
+
+    # Caps one reply. A shopkeeper reading on a phone will not scroll past this,
+    # and every token past it is latency they wait through.
+    GEMINI_MAX_OUTPUT_TOKENS: int = 800
+
+    # How long to wait for Google before giving up and saying so.
+    GEMINI_TIMEOUT_SECONDS: float = 30.0
+
+    # --- Identity (Clerk) ---------------------------------------------------
+    #
+    # Optional. Blank means the Clerk sign-in route reports itself unavailable
+    # and mobile+password carries on unchanged — the same posture the assistant
+    # takes without a key, and the reason adding this broke nothing.
+    #
+    # Clerk proves who someone is once, at sign-in. It does not own the session:
+    # see app/modules/auth/clerk.py for why that distinction is load-bearing
+    # for a shop on a rural connection.
+    CLERK_SECRET_KEY: str = ""
+
+    # The instance's Frontend API origin, e.g.
+    # "https://verb-noun-00.clerk.accounts.dev". It is the `iss` every token
+    # must carry and the host the signing keys are fetched from. Taken from the
+    # publishable key when left blank, since that key encodes it.
+    CLERK_ISSUER: str = ""
+
+    # The publishable key the browser uses. Also read here so the issuer can be
+    # derived from it — it is not a secret.
+    CLERK_PUBLISHABLE_KEY: str = ""
+
+    # Origins allowed to present a token, matched against the `azp` claim. A
+    # token minted for another site is then refused even though it is validly
+    # signed by the same Clerk instance. Blank skips the check, which is right
+    # for local development and wrong in production.
+    CLERK_AUTHORIZED_PARTIES: str = ""
+
+    # Signing keys are cached this long. Clerk rotates them; an unknown key id
+    # forces an immediate refetch regardless, so this only bounds how long a
+    # retired key stays trusted.
+    CLERK_JWKS_TTL_SECONDS: int = 3600
+
+    # The cut taken on a sourced wholesale order, as a fraction. Deliberately
+    # thin and deliberately visible: the product's promise is that a shopkeeper
+    # gets the best local price without visiting four suppliers, and a markup
+    # they discover later is the one thing that breaks it. Every quote states
+    # this in rupees.
+    PLATFORM_MARGIN_RATE: float = 0.02
+
+    # How far a shop will deliver to a household on foot or by bicycle. Beyond
+    # this the order is not a delivery, it is a journey - and the runner is a
+    # teenager with a cycle, not a courier network.
+    DELIVERY_RADIUS_KM: float = 3.0
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property

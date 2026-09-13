@@ -11,7 +11,7 @@ import { ScoreRing } from '../../../components/ui/ScoreRing';
 import { Section } from '../../../components/ui/Section';
 import { Skeleton, SkeletonText } from '../../../components/ui/Skeleton';
 import { Stat, StatGroup } from '../../../components/ui/Stat';
-import { fetchApi } from '../../../services/api/client';
+import { intelligenceApi } from '../../../services/api/intelligenceApi';
 import { useApiResource } from '../../../hooks/useApiResource';
 
 // Mirrors DEMAND_WEIGHT in the scoring engine, so the demand component reads as
@@ -22,8 +22,10 @@ export function OpportunityDetail() {
   const { opportunityId } = useParams();
   const navigate = useNavigate();
 
+  // Through the api module like every other screen, rather than hand-building
+  // the path here - one place decides what this endpoint is called.
   const fetcher = useCallback(
-    () => fetchApi(`/intelligence/opportunities/${opportunityId}`),
+    () => intelligenceApi.getOpportunity(opportunityId),
     [opportunityId],
   );
   const { data: opportunity, isLoading, error, reload } = useApiResource(fetcher);

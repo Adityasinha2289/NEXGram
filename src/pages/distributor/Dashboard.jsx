@@ -1,15 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import {
-  AlertCircle,
-  CheckCircle2,
-  Landmark,
-  MapPin,
-  Package,
-  PlusCircle,
-  Target,
-  Truck,
-  Users,
-} from 'lucide-react';
+import { MapPin, PlusCircle, Target, Users } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -37,13 +27,21 @@ export function DistributorDashboard() {
   if (error) return <ErrorState description={error} onRetry={reload} />;
   if (!data) return null;
 
-  const { businessName, location, snapshot, demandGaps, retailerDemand, orders, catalogue } = data;
+  const {
+    businessName,
+    location,
+    snapshot,
+    demandGaps,
+    retailerDemand,
+    orders,
+    catalogue,
+    opportunityCount,
+  } = data;
   const displayLocation = [location.area, location.district].filter(Boolean).join(', ');
 
   // The bars below are shares of the largest category, not of the total: with
   // one dominant category every other bar would round to nothing.
   const busiestCategory = Math.max(1, ...retailerDemand.map((item) => item.count));
-  const needsAttention = orders.pending + orders.ready;
 
   return (
     <div className="flex animate-fade-in flex-col gap-6">
@@ -51,18 +49,37 @@ export function DistributorDashboard() {
         eyebrow="Mera business"
         title={`Namaste, ${businessName}`}
         description="Aapke area mein kis cheez ki demand hai aur koi supply nahi kar raha — sab ek jagah."
-        meta={
-          <>
-            {displayLocation && <Meta icon={MapPin}>{displayLocation}</Meta>}
-            <Meta icon={Users}>{snapshot.retailersLooking} retailers demand bhej rahe hain</Meta>
-          </>
-        }
+        // The retailer count used to sit here as well, directly above the
+        // Retailers reading that already carries it.
+        meta={displayLocation && <Meta icon={MapPin}>{displayLocation}</Meta>}
         action={
           <Button icon={PlusCircle} onClick={() => navigate('/distributor/catalogue')}>
             Product add karo
           </Button>
         }
       />
+
+      {/* Moved out of the right-hand column, which a phone renders last: the
+          readings were at the bottom of the scroll on the device most of these
+          users open the app on. */}
+      <StatGroup>
+        <Stat
+          label="Top score"
+          value={snapshot.opportunityScore}
+          caption={snapshot.opportunityLabel}
+          tone={TONE_BY_VARIANT[snapshot.opportunityVariant] || 'default'}
+        />
+        <Stat
+          label="Retailers"
+          value={snapshot.retailersLooking}
+          caption={snapshot.retailersLabel}
+        />
+        <Stat
+          label="Products"
+          value={catalogue.totalProducts}
+          caption={`${catalogue.totalCategories} categor${catalogue.totalCategories === 1 ? 'y' : 'ies'}`}
+        />
+      </StatGroup>
 
       <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)] lg:items-start lg:gap-7">
         <div className="flex min-w-0 flex-col gap-6">
@@ -72,7 +89,9 @@ export function DistributorDashboard() {
             action={
               demandGaps.length > 0 && (
                 <SectionLink onClick={() => navigate('/distributor/opportunities')}>
-                  Sab dekho
+                  {/* The payload has always carried the full count; the link
+                      used to say "Sab dekho" without saying how many. */}
+                  {opportunityCount ? `Sab ${opportunityCount}` : 'Sab dekho'}
                 </SectionLink>
               )
             }
@@ -101,10 +120,18 @@ export function DistributorDashboard() {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      {/* A category-level gap has no product, so the engine
-                          labels it with the category — printing that twice
-                          reads like a rendering fault. */}
-                      {gap.category !== gap.product && <p className="eyebrow">{gap.category}</p>}
+                      {/*
+                       * A gap can be about one product or about a whole
+                       * category, and a category-level one arrives with its
+                       * product field set to the category name. The eyebrow
+                       * used to be hidden in that case, which left two
+                       * category-level Dairy signals rendering as two rows both
+                       * titled "Dairy" with nothing to tell them apart — it
+                       * read as a duplicate rather than two real signals.
+                       */}
+                      <p className="eyebrow">
+                        {gap.category === gap.product ? 'Poori category' : gap.category}
+                      </p>
                       <div className="mt-0.5 flex flex-wrap items-center gap-2">
                         <h4 className="text-base font-semibold leading-tight text-text-primary">
                           {gap.product}
@@ -186,87 +213,36 @@ export function DistributorDashboard() {
         </div>
 
         <aside className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-[84px]">
-          <StatGroup>
-            <Stat
-              label="Top score"
-              value={snapshot.opportunityScore}
-              caption={snapshot.opportunityLabel}
-              tone={TONE_BY_VARIANT[snapshot.opportunityVariant] || 'default'}
-            />
-            <Stat
-              label="Retailers"
-              value={snapshot.retailersLooking}
-              caption={snapshot.retailersLabel}
-            />
-            <Stat
-              label="Products"
-              value={catalogue.totalProducts}
-              caption={`${catalogue.totalCategories} categories`}
-            />
-          </StatGroup>
-
+          {/*
+           * Orders, as three readings rather than three rows.
+           *
+           * This was a list of three tappable rows that all went to the same
+           * page, followed by a sentence restating two of the numbers. It is
+           * one instrument panel and one link now.
+           *
+           * The "Shortcuts" block that used to sit below it is gone: its three
+           * rows — catalogue, opportunities, schemes — are all in the sidebar
+           * nav two inches to the left, so it was navigation drawn twice.
+           */}
           <Section
             title="Orders"
             action={
               <SectionLink onClick={() => navigate('/distributor/orders')}>Dekho</SectionLink>
             }
           >
-            <List>
-              <ListRow onClick={() => navigate('/distributor/orders')}>
-                <AlertCircle size={16} className="flex-shrink-0 text-warning" strokeWidth={2} />
-                <span className="flex-1 text-sm text-text-secondary">Pending</span>
-                <span className="num text-sm font-semibold text-text-primary">{orders.pending}</span>
-              </ListRow>
-              <ListRow onClick={() => navigate('/distributor/orders')}>
-                <Truck size={16} className="flex-shrink-0 text-primary" strokeWidth={2} />
-                <span className="flex-1 text-sm text-text-secondary">Delivery ke liye ready</span>
-                <span className="num text-sm font-semibold text-text-primary">{orders.ready}</span>
-              </ListRow>
-              <ListRow onClick={() => navigate('/distributor/orders')}>
-                <CheckCircle2 size={16} className="flex-shrink-0 text-text-muted" strokeWidth={2} />
-                <span className="flex-1 text-sm text-text-secondary">Recently complete</span>
-                <span className="num text-sm font-semibold text-text-primary">
-                  {orders.completed}
-                </span>
-              </ListRow>
-            </List>
-            {needsAttention > 0 && (
-              <p className="text-2xs text-text-muted">
-                {needsAttention} order{needsAttention === 1 ? '' : 's'} aapke action ka intezaar
-                kar rahe hain.
-              </p>
-            )}
-          </Section>
-
-          <Section title="Shortcuts">
-            <List>
-              <ListRow onClick={() => navigate('/distributor/catalogue')}>
-                <Package size={16} className="flex-shrink-0 text-text-muted" strokeWidth={2} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-text-primary">Catalogue manage karo</p>
-                  <p className="num truncate text-2xs text-text-muted">
-                    {catalogue.totalProducts} products · {catalogue.totalCategories} categories
-                  </p>
-                </div>
-                <RowChevron />
-              </ListRow>
-              <ListRow onClick={() => navigate('/distributor/opportunities')}>
-                <Target size={16} className="flex-shrink-0 text-text-muted" strokeWidth={2} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-text-primary">Saari opportunities</p>
-                  <p className="truncate text-2xs text-text-muted">Score aur evidence ke saath</p>
-                </div>
-                <RowChevron />
-              </ListRow>
-              <ListRow onClick={() => navigate('/distributor/schemes')}>
-                <Landmark size={16} className="flex-shrink-0 text-text-muted" strokeWidth={2} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-text-primary">Sarkari schemes</p>
-                  <p className="truncate text-2xs text-text-muted">Aapke profile se match</p>
-                </div>
-                <RowChevron />
-              </ListRow>
-            </List>
+            <StatGroup>
+              <Stat
+                label="Pending"
+                value={orders.pending}
+                tone={orders.pending > 0 ? 'caution' : 'default'}
+              />
+              <Stat
+                label="Ready"
+                value={orders.ready}
+                tone={orders.ready > 0 ? 'brand' : 'default'}
+              />
+              <Stat label="Complete" value={orders.completed} />
+            </StatGroup>
           </Section>
         </aside>
       </div>
