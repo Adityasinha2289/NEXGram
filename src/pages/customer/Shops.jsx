@@ -33,7 +33,7 @@ export function Shops() {
   const shops = data || [];
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow="Aas-paas"
         title="Kya mangwana hai?"

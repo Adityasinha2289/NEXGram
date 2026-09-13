@@ -51,7 +51,7 @@ export function Schemes() {
   const openId = selectedId !== null ? selectedId : (schemes[0]?.id ?? null);
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow="Sarkari schemes"
         title="Aapke liye kaun si scheme"

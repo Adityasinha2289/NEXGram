@@ -105,7 +105,7 @@ export function Deliveries() {
   };
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow="Home delivery"
         title="Ghar tak ke order"

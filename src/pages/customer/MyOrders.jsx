@@ -21,7 +21,7 @@ export function MyOrders() {
   const orders = data || [];
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow="Mere order"
         title="Kya aa raha hai"
@@ -104,7 +104,7 @@ export function MyOrderDetail() {
   const canCancel = order.status === 'placed' || order.status === 'accepted';
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow={order.orderNumber}
         title={status.label}

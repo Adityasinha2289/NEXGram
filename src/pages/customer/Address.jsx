@@ -105,7 +105,7 @@ export function Address() {
   return (
     <form
       onSubmit={(event) => { event.preventDefault(); save(); }}
-      className="flex animate-fade-in flex-col gap-5"
+      className="flex animate-fade-in flex-col gap-6"
     >
       <PageHeader
         eyebrow="Delivery"

@@ -78,15 +78,26 @@ export function Sourcing() {
     }
   };
 
-  if (isLoading) return <div className="flex flex-col gap-5"><SkeletonList rows={6} /></div>;
+  if (isLoading) return <div className="flex flex-col gap-6"><SkeletonList rows={6} /></div>;
   if (error) return <ErrorState description={error} onRetry={reload} />;
   if (!data) return null;
 
-  const { lines, unavailable, split, singleSupplier, savingVsSingle, savingVsWorst } = data;
+  // Defaulted rather than destructured bare. The useMemo above already reads
+  // `data?.lines || []`, so the component was half-defensive: a response
+  // missing `lines` passed the null check two lines up and then white-screened
+  // on `lines.length`. An empty basket is a state this screen already draws.
+  const {
+    lines = [],
+    unavailable = [],
+    split,
+    singleSupplier,
+    savingVsSingle,
+    savingVsWorst,
+  } = data;
 
   if (placed && placed.ordersPlaced > 0) {
     return (
-      <div className="flex animate-fade-in flex-col gap-5 pt-6">
+      <div className="flex animate-fade-in flex-col gap-6 pt-6">
         <EmptyState
           icon={CheckCircle2}
           title={`${placed.ordersPlaced} order bhej diye`}
@@ -105,7 +116,7 @@ export function Sourcing() {
 
   if (lines.length === 0) {
     return (
-      <div className="flex animate-fade-in flex-col gap-5">
+      <div className="flex animate-fade-in flex-col gap-6">
         <PageHeader
           eyebrow="Sourcing"
           title="Sabse saste daam par"

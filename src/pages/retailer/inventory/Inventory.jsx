@@ -88,7 +88,7 @@ export function Inventory() {
   };
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow="Meri dukaan"
         title="Shelf stock"

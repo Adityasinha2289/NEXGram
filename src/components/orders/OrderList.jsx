@@ -50,7 +50,7 @@ export function OrderList({ role, title, description, emptyAction }) {
     .map((option) => ({ ...option, count: counts[option.value] || 0 }));
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader eyebrow="Orders" title={title} description={description} />
 
       {error ? (

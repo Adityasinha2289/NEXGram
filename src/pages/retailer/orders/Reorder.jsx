@@ -29,7 +29,7 @@ export function Reorder() {
   const dueCount = items.filter((item) => item.dueNow).length;
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow="Reorder"
         title="Dobara order karein"

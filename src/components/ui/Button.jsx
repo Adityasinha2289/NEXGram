@@ -1,15 +1,24 @@
 import styles from './Button.module.css';
 
-export function Button({ 
-  children, 
-  variant = 'primary', 
-  size = 'md', 
+/**
+ * @param type  Defaults to "button" rather than the HTML default of "submit".
+ *              An untyped <button> inside a <form> submits it, so a Button
+ *              added to a form for some unrelated action — "use my location",
+ *              "add a runner" — would silently submit as well. Every button
+ *              that really does submit already says so explicitly, so making
+ *              that the requirement costs nothing and removes the trap.
+ */
+export function Button({
+  children,
+  variant = 'primary',
+  size = 'md',
   fullWidth = false,
   isLoading = false,
   disabled = false,
   icon: Icon,
-  className = '', 
-  ...props 
+  type = 'button',
+  className = '',
+  ...props
 }) {
   const classes = [
     styles.btn,
@@ -21,9 +30,10 @@ export function Button({
   ].filter(Boolean).join(' ');
 
   return (
-    <button 
-      className={classes} 
-      disabled={disabled || isLoading} 
+    <button
+      type={type}
+      className={classes}
+      disabled={disabled || isLoading}
       {...props}
     >
       {isLoading ? (

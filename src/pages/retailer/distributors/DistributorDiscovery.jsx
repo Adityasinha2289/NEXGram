@@ -94,7 +94,7 @@ export function DistributorDiscovery() {
   const showBestMatch = bestMatch && !searchQuery && selectedCategory === 'All';
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow="Suppliers"
         title="Aas-paas ke distributors"

@@ -174,7 +174,7 @@ export function Landing() {
             {/* Beside the buttons that can fail, rather than two sections
                 further down where it used to sit. */}
             {error && (
-              <p role="alert" className="mt-4 text-sm font-medium text-red-700">{error}</p>
+              <p role="alert" className="mt-4 text-sm font-medium text-danger">{error}</p>
             )}
           </div>
 

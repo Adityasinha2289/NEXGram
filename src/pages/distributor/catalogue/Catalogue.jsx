@@ -92,7 +92,7 @@ export function Catalogue() {
   if (error) return <ErrorState title="Catalogue load nahi hui" description={error} />;
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow="Stock"
         title="Meri catalogue"

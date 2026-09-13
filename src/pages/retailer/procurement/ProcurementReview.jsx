@@ -78,7 +78,7 @@ export function ProcurementReview() {
 
   if (successOrders.length > 0 && Object.keys(basket).length === 0 && !error) {
     return (
-      <div className="flex animate-fade-in flex-col gap-5 pt-8">
+      <div className="flex animate-fade-in flex-col gap-6 pt-8">
         <EmptyState
           icon={CheckCircle}
           title="Orders Placed Successfully"
@@ -92,7 +92,7 @@ export function ProcurementReview() {
 
   if (distributorIds.length === 0) {
     return (
-      <div className="flex animate-fade-in flex-col gap-5 pt-8">
+      <div className="flex animate-fade-in flex-col gap-6 pt-8">
         <EmptyState
           icon={ShoppingCart}
           title="Basket Khaali Hai"
@@ -105,7 +105,7 @@ export function ProcurementReview() {
   }
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5 pb-24">
+    <div className="flex animate-fade-in flex-col gap-6 pb-24">
       <PageHeader
         eyebrow="Review"
         title="Procurement Basket"

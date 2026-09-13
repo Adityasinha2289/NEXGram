@@ -83,12 +83,12 @@ export function ShopCatalogue() {
     }
   };
 
-  if (isLoading) return <div className="flex flex-col gap-5"><SkeletonList rows={6} /></div>;
+  if (isLoading) return <div className="flex flex-col gap-6"><SkeletonList rows={6} /></div>;
   if (loadError) return <ErrorState description={loadError} onRetry={reload} />;
   if (!data) return null;
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5 pb-32">
+    <div className="flex animate-fade-in flex-col gap-6 pb-32">
       <PageHeader
         eyebrow={data.area || 'Aapke paas'}
         title={data.name}

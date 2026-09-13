@@ -25,7 +25,7 @@ export function ProductDiscovery() {
   const results = data?.items || [];
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow="Products"
         title="Jo chahiye, woh dhoondo"

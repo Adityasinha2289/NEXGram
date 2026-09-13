@@ -136,7 +136,7 @@ export function Catalogue() {
   const locationLine = [location.area, location.district].filter(Boolean).join(', ');
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-6">
       <PageHeader
         eyebrow={distributor.business_category || 'Supplier'}
         title={distributor.business_name}
