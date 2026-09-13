@@ -17,6 +17,15 @@ export default defineConfig(({ mode }) => ({
     // It also puts the app on the machine's LAN address, which is how you open
     // it on an actual phone - the only way to try the counter microphone.
     host: true,
+
+    // Proxy the API through this origin so one tunnel serves the whole app.
+    // Without it the browser loads the page from the tunnel and then calls
+    // localhost:8000, which only exists on the developer's own machine — so
+    // the site loads and every screen is empty for anyone else.
+    // Pairs with VITE_API_BASE_URL=/api in .env.local.
+    proxy: {
+      '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+    },
   },
 
   // Vitest transforms test files through esbuild rather than the React plugin,
