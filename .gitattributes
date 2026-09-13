@@ -1,0 +1,9 @@
+# Shell scripts must keep LF endings whatever the checkout platform.
+#
+# This repo is developed on Windows with core.autocrlf on, so a .sh file would
+# otherwise be committed or checked out with CRLF. Inside a Linux container the
+# carriage return becomes part of the shebang and the process dies with
+# "/bin/sh^M: bad interpreter" — an error that names neither the file nor the
+# real cause.
+*.sh text eol=lf
+Dockerfile text eol=lf

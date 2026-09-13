@@ -71,17 +71,29 @@ alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
 
 so every deploy migrates before serving. No release hook needed.
 
-A fresh Postgres is **empty** — no products, no demo accounts, so the landing
-page's one-tap demos will fail. Seed it once from a Render Shell:
+A fresh Postgres is **empty** — no products, no categories, no demo accounts.
+The landing page's one-tap demos fail, the dashboards render their empty states,
+and "add stock" correctly reports `Koi product nahi mila`, because there is
+genuinely nothing to add.
 
-```
-python -m seed.demo_seed
-```
+**Render's free instances have no shell** — SSH and the dashboard Shell tab are
+paid-plan features — so `python -m seed.demo_seed` cannot be run by hand there.
+Seed it by setting one environment variable instead:
 
-That builds the Kangra district corpus the intelligence layer needs: 3 villages,
-8 distributors, 25 retailers, ~45 products and 60 days of order history. Without
-it the dashboards render their empty states correctly but there is nothing to
-show.
+| Key | Value |
+|---|---|
+| `SEED_DEMO_DATA` | `true` |
+
+`entrypoint.sh` then runs the seed after migrations on the next boot. Leaving it
+on is safe: `demo_seed` returns immediately if the database already has
+categories (`run_seed`, `demo_seed.py`), so it is a no-op from the second start
+onwards. On a paid plan with shell access, leave the variable unset and run the
+module directly.
+
+Either way it builds the Kangra district corpus the intelligence layer needs:
+3 villages, 8 distributors, 25 retailers, ~45 products and 60 days of order
+history, then computes the demand signals and opportunity scores the dashboards
+read.
 
 ---
 

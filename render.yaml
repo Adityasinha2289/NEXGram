@@ -55,6 +55,12 @@ services:
       # --- Optional. Each feature reports itself unconfigured and hides,
       # rather than erroring, when its keys are absent. ---
 
+      # Seeds the demo corpus on first boot. Render's free instances have no
+      # shell, so this is the only way to populate a fresh database there. It
+      # is a no-op once the data exists.
+      - key: SEED_DEMO_DATA
+        value: "true"
+
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL

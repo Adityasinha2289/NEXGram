@@ -23,6 +23,7 @@ WORKDIR /app
 
 COPY --from=builder /install /usr/local
 COPY --chown=nexgram:nexgram . .
+RUN chmod +x ./entrypoint.sh
 
 USER nexgram
 
@@ -37,4 +38,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -fsS http://localhost:8000/ready || exit 1
 
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Migrations, an optional seed, then the server. See entrypoint.sh for why
+# the seed is there at all and why running it every boot is safe.
+CMD ["./entrypoint.sh"]

@@ -1,0 +1,11 @@
+# Only the Vite app ships to Vercel.
+#
+# The CLI otherwise detects backend/ as a FastAPI service and offers to run it
+# here. It cannot: it needs Postgres, a migration step before it serves, and a
+# process that stays up — all of which live on Render. Excluding it also keeps
+# the upload to the app being built.
+backend/
+frontend/
+docs/
+dist/
+*.db
