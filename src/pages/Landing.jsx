@@ -50,7 +50,7 @@ const FLOW = [
 
 export function Landing() {
   const navigate = useNavigate();
-  const { login, currentUser } = useAuth();
+  const { loginAsDemo, currentUser } = useAuth();
   const [pending, setPending] = useState(null);
   const [error, setError] = useState(null);
 
@@ -64,12 +64,17 @@ export function Landing() {
     setPending(roleKey);
     setError(null);
     try {
-      // Routed by what the server says the account is, not by which button
-      // was pressed.
-      const user = await login(role.demo.mobile, role.demo.password);
+      // A role, not a credential. This used to post the demo account's mobile
+      // and password from the browser, which failed the moment a deployed
+      // database had not been seeded — and failed as "Mobile number ya password
+      // galat hai", which is about the last place anyone would have looked.
+      //
+      // Routed by what the server says the account is, not by which button was
+      // pressed.
+      const user = await loginAsDemo(roleKey);
       navigate(homeFor(user?.role || roleKey));
     } catch (err) {
-      setError(err?.message || 'Demo login failed. Please try from the login page.');
+      setError(err?.message || 'Demo abhi nahi khul paya. Thodi der baad try karein.');
     } finally {
       setPending(null);
     }

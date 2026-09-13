@@ -45,6 +45,23 @@ export const authApi = {
     body: JSON.stringify(payload),
   }),
 
+  /** Which demo accounts the server can actually open, if any. */
+  demoStatus: () => fetchApi('/auth/demo/status'),
+
+  /**
+   * Opens a demo account by role, with no credentials.
+   *
+   * The browser used to post a hardcoded password for this. It worked until a
+   * deployed database had not been seeded, and then every demo button reported
+   * "Mobile number ya password galat hai" — which sent everyone hunting for a
+   * wrong password when the catalogue was simply empty. There is nothing to get
+   * wrong now, and an unseeded server says so in as many words.
+   */
+  demoLogin: (role) => fetchApi('/auth/demo', {
+    method: 'POST',
+    body: JSON.stringify({ role }),
+  }),
+
   /** Whether the server has a Clerk instance configured to sign in against. */
   clerkStatus: () => fetchApi('/auth/clerk/status'),
 

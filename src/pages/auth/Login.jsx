@@ -26,7 +26,7 @@ import { isClerkEnabled } from '../../config/clerk';
 export function Login() {
   const { role: roleParam } = useParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginAsDemo } = useAuth();
 
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
@@ -53,16 +53,17 @@ export function Login() {
     }
   };
 
-  const loginAsDemo = async (demoRole) => {
-    const account = ROLES[demoRole].demo;
-    setMobile(account.mobile);
-    setPassword(account.password);
+  const openDemo = async (demoRole) => {
+    // No longer fills the form with a mobile and password and submits it. The
+    // server resolves the role to its own seeded account, so a demo cannot fail
+    // as "Mobile number ya password galat hai" when the truth is that nobody
+    // seeded the database.
     setError(null);
     setIsLoading(true);
     try {
-      goHome(await login(account.mobile, account.password));
+      goHome(await loginAsDemo(demoRole));
     } catch (err) {
-      setError(err.message || 'Demo login nahi ho paya.');
+      setError(err.message || 'Demo abhi nahi khul paya. Thodi der baad try karein.');
     } finally {
       setIsLoading(false);
     }
@@ -172,7 +173,7 @@ export function Login() {
           variant="outline"
           fullWidth
           disabled={isLoading}
-          onClick={() => loginAsDemo(role.key)}
+          onClick={() => openDemo(role.key)}
         >
           {role.demo.label} se khol dein
         </Button>

@@ -14,9 +14,10 @@ import { ROLES } from '../../constants/roles';
  * a dashboard they have no profile for.
  */
 const login = vi.fn();
+const loginAsDemo = vi.fn();
 
 vi.mock('../../context/useAuth', () => ({
-  useAuth: () => ({ login }),
+  useAuth: () => ({ login, loginAsDemo }),
 }));
 
 const renderAt = (path) => render(
@@ -35,6 +36,10 @@ const renderAt = (path) => render(
 describe('Login', () => {
   beforeEach(() => {
     login.mockReset();
+    // Was missing, so a demo mock set in one test decided where a later one
+    // navigated — which is how "sends a customer to the storefront" landed on
+    // the retailer's dashboard.
+    loginAsDemo.mockReset();
     localStorage.clear();
   });
 
@@ -105,7 +110,8 @@ describe('Login', () => {
     });
 
     it('sends a customer to the storefront', async () => {
-      login.mockResolvedValue({ id: 'u1', role: 'customer' });
+      // This clicks the demo button, so it is the demo call that answers.
+      loginAsDemo.mockResolvedValue({ id: 'u1', role: 'customer' });
       const user = userEvent.setup();
 
       renderAt('/login/customer');
@@ -130,7 +136,7 @@ describe('Login', () => {
     });
 
     it('uses the demo credentials the seed actually created', async () => {
-      login.mockResolvedValue({ id: 'u1', role: 'retailer' });
+      loginAsDemo.mockResolvedValue({ id: 'u1', role: 'retailer' });
       const user = userEvent.setup();
 
       renderAt('/login/retailer');
@@ -138,9 +144,9 @@ describe('Login', () => {
         screen.getByRole('button', { name: `${ROLES.retailer.demo.label} se khol dein` }),
       );
 
-      await waitFor(() => expect(login).toHaveBeenCalledWith(
-        ROLES.retailer.demo.mobile, ROLES.retailer.demo.password,
-      ));
+      // A role, not a credential: the form is no longer filled in and submitted.
+      await waitFor(() => expect(loginAsDemo).toHaveBeenCalledWith('retailer'));
+      expect(login).not.toHaveBeenCalled();
     });
   });
 

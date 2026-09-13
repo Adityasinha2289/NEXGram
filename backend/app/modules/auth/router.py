@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
 from app.core import audit
+from app.core.config import settings
 from app.core.rate_limit import auth_limiter, client_key, rate_limit_auth
 from app.core.security import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
 from app.modules.auth import clerk, password_reset, schemas, service
@@ -65,6 +66,86 @@ def login_for_access_token(
         entity_id=user.id,
         actor_id=user.id,
         metadata={"ip": client_key(request)},
+        commit=True,
+    )
+    return {
+        "access_token": create_access_token(
+            subject=user.id, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        ),
+        "token_type": "bearer",
+    }
+
+
+# The accounts seed/demo_seed.py creates. Kept here rather than imported so the
+# API does not depend on the seed package at runtime, and so this list is the
+# only thing /auth/demo can ever reach.
+DEMO_MOBILES = {
+    "retailer": "9000000001",
+    "distributor": "9100000002",
+    "customer": "9500000001",
+}
+
+
+@router.get("/demo/status", summary="Whether one-tap demo access is available")
+def demo_status(db: Session = Depends(get_db)):
+    """Lets the landing page hide the demo buttons rather than offer a dead one.
+
+    Reports ready only when the accounts actually exist, because "enabled" and
+    "seeded" are different things and an unseeded database is exactly how the
+    demo used to fail.
+    """
+    if not settings.DEMO_LOGIN_ENABLED:
+        return {"enabled": False, "roles": []}
+    present = [
+        role for role, mobile in DEMO_MOBILES.items()
+        if db.query(User).filter(User.mobile == mobile).first()
+    ]
+    return {"enabled": True, "roles": present}
+
+
+@router.post(
+    "/demo",
+    response_model=schemas.Token,
+    summary="Open a seeded demo account without credentials",
+)
+def open_demo_account(
+    payload: schemas.DemoLogin,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Issues a session for one of the three seeded demo accounts.
+
+    Deliberately not behind the auth rate limiter. The limiter exists to slow
+    down password guessing, and there is no password here to guess — while a
+    shared limit is exactly what breaks a demo button when several people try
+    it at once from behind one NAT, which is the normal case in a hall.
+    """
+    if not settings.DEMO_LOGIN_ENABLED:
+        raise HTTPException(status_code=404, detail="Demo access is not enabled.")
+
+    mobile = DEMO_MOBILES.get(payload.role.value)
+    if not mobile:
+        raise HTTPException(status_code=404, detail="Is role ka demo account nahi hai.")
+
+    user = db.query(User).filter(User.mobile == mobile).first()
+    if not user:
+        # The database has not been seeded. Say so, rather than repeating the
+        # "mobile ya password galat hai" that sent everyone looking at
+        # credentials the last time this happened.
+        raise HTTPException(
+            status_code=503,
+            detail="Demo data abhi load nahi hua hai. Thodi der baad try karein.",
+        )
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Yeh demo account band hai.")
+
+    audit.record(
+        db,
+        action="auth.demo_login",
+        entity_type="user",
+        entity_id=user.id,
+        actor_id=user.id,
+        metadata={"ip": client_key(request), "role": user.role},
         commit=True,
     )
     return {

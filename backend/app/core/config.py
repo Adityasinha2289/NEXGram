@@ -63,6 +63,22 @@ class Settings(BaseSettings):
     # How long to wait for Google before giving up and saying so.
     GEMINI_TIMEOUT_SECONDS: float = 30.0
 
+    # --- Demo access --------------------------------------------------------
+    #
+    # Lets the landing page open a demo account in one tap, without the browser
+    # holding a password.
+    #
+    # This grants nothing that was not already public: the demo credentials
+    # shipped inside the client bundle, so anyone could read them from the
+    # JavaScript and sign in. What it removes is a class of breakage — the
+    # button failing because the seed's password changed, or because somebody
+    # else's typos used up the shared rate limit — on the one flow whose whole
+    # job is to work first time in front of an audience.
+    #
+    # It only ever resolves the three seeded demo numbers. Set false on any
+    # deployment carrying real shops.
+    DEMO_LOGIN_ENABLED: bool = True
+
     # --- Identity (Clerk) ---------------------------------------------------
     #
     # Optional. Blank means the Clerk sign-in route reports itself unavailable

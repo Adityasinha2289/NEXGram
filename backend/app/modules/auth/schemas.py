@@ -21,6 +21,12 @@ class Token(BaseModel):
     token_type: str
 
 
+class DemoLogin(BaseModel):
+    """Opens one of the seeded demo accounts. No credentials."""
+
+    role: RoleEnum
+
+
 class ClerkExchange(BaseModel):
     """Trades a Clerk session token for a NEXGram one.
 

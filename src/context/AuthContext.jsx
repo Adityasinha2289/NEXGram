@@ -171,6 +171,20 @@ export function AuthProvider({ children }) {
   };
 
   /**
+   * Opens a demo account, and returns the user the server recognised.
+   *
+   * No credentials leave the browser. The role is a request, not an assertion:
+   * the server picks which seeded account that means, and the session it hands
+   * back is an ordinary one.
+   */
+  const loginAsDemo = async (role) => {
+    const res = await authApi.demoLogin(role);
+    if (!res.access_token) return null;
+    localStorage.setItem('nexgram_access_token', res.access_token);
+    return fetchCurrentUser();
+  };
+
+  /**
    * Signs in with an identity Clerk has already proved, and returns the user
    * the server recognised.
    *
@@ -207,6 +221,7 @@ export function AuthProvider({ children }) {
       isLoading,
       isAuthenticated: !!currentUser,
       login,
+      loginAsDemo,
       loginWithClerk,
       register,
       logout,

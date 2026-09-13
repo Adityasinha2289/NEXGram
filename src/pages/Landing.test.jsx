@@ -14,10 +14,11 @@ import { ROLES } from '../constants/roles';
  * product includes them.
  */
 const login = vi.fn();
+const loginAsDemo = vi.fn();
 let currentUser = null;
 
 vi.mock('../context/useAuth', () => ({
-  useAuth: () => ({ login, currentUser }),
+  useAuth: () => ({ login, loginAsDemo, currentUser }),
 }));
 
 const renderLanding = () => render(
@@ -36,6 +37,7 @@ const renderLanding = () => render(
 describe('Landing', () => {
   beforeEach(() => {
     login.mockReset();
+    loginAsDemo.mockReset();
     currentUser = null;
     localStorage.clear();
   });
@@ -62,22 +64,24 @@ describe('Landing', () => {
     expect(screen.getByRole('link', { name: 'Login' })).toHaveAttribute('href', '/login');
   });
 
-  it('opens a demo straight into that role', async () => {
-    login.mockResolvedValue({ id: 'u1', role: 'customer' });
+  it('opens a demo with a role and no credentials', async () => {
+    // The browser used to post the demo account's mobile and password. It now
+    // asks for a role and the server decides which account that is, so the
+    // button cannot fail as "wrong password" when a database is simply empty.
+    loginAsDemo.mockResolvedValue({ id: 'u1', role: 'customer' });
     const user = userEvent.setup();
 
     renderLanding();
     await user.click(screen.getAllByRole('button', { name: /Demo kholo/ })[2]);
 
-    await waitFor(() => expect(login).toHaveBeenCalledWith(
-      ROLES.customer.demo.mobile, ROLES.customer.demo.password,
-    ));
+    await waitFor(() => expect(loginAsDemo).toHaveBeenCalledWith('customer'));
+    expect(login).not.toHaveBeenCalled();
     expect(await screen.findByText('Customer home')).toBeInTheDocument();
   });
 
   it('routes a demo by what the server returned', async () => {
     // Guards against the button, not the account, deciding the destination.
-    login.mockResolvedValue({ id: 'u1', role: 'distributor' });
+    loginAsDemo.mockResolvedValue({ id: 'u1', role: 'distributor' });
     const user = userEvent.setup();
 
     renderLanding();
@@ -87,7 +91,7 @@ describe('Landing', () => {
   });
 
   it('reports a failed demo rather than doing nothing', async () => {
-    login.mockRejectedValue(new Error('Backend down'));
+    loginAsDemo.mockRejectedValue(new Error('Backend down'));
     const user = userEvent.setup();
 
     renderLanding();
